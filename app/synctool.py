@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 """Logging setup"""
 # create logger
-logger = logging.getLogger('com.directenergypartners.simserver')
+logger = logging.getLogger('io.glitchlab.ebay-sync-tool')
 logger.setLevel(logging.DEBUG)
 
 # create console handler 
