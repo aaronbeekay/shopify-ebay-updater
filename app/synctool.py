@@ -44,10 +44,12 @@ def create_system():
 @app.route('/<path:file>')
 def serve_root(file):
 	logger.debug('Request for file {}'.format(file))
-	if file == '':
-		return send_from_directory(STATIC_FILE_DIR, 'index.html')
-	else:
-		return send_from_directory(STATIC_FILE_DIR, file)
+	return send_from_directory(STATIC_FILE_DIR, file)
+		
+@app.route('/')
+def index():
+	logger.debug('Got a request for root')
+	return send_from_directory(STATIC_FILE_DIR, 'index.html')
 	
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')
