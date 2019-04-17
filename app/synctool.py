@@ -1,6 +1,6 @@
 import logging
 import json
-from flask import Flask, render_template, request, abort, send_file
+from flask import Flask, render_template, request, abort, send_from_directory
 
 app = Flask(__name__)
 #CORS(app, resources=r'/api/*')		# Allow any origin for requests to paths starting with /api/
@@ -38,6 +38,10 @@ def create_system():
 	logger.debug('Got a GET request to /api/hello-world')
 	
 	return("Hello from Flask!")
+	
+@app.route('/<path:path>')
+def serve_root(path):
+	return send_from_directory('static', path)
 	
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')
