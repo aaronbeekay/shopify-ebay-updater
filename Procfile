@@ -1,1 +1,1 @@
-web: gunicorn synctool:app
+web: env PYTHONPATH=$PYTHONPATH:$PWD/app gunicorn synctool:app
