@@ -39,9 +39,9 @@ def create_system():
 	
 	return("Hello from Flask!")
 	
-@app.route('/<path:path>')
+@app.route('/<path:file>')
 def serve_root(path):
-	return send_from_directory('static', path)
+	return send_from_directory('static', file)
 	
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')
