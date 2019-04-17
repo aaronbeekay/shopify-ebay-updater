@@ -43,6 +43,7 @@ def create_system():
 	
 @app.route('/<path:file>')
 def serve_root(file):
+	logger.debug('Request for file {}'.format(file))
 	if file == '':
 		return send_from_directory(STATIC_FILE_DIR, 'index.html')
 	else:
