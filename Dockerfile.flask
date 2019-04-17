@@ -6,10 +6,11 @@ RUN apk add --no-cache bash git py3-gunicorn py3-flask	\
 	&& pip3 install flask flask-cors 
 	
 COPY ./app /app
+COPY ./static /static
 
 ENV PYTHONPATH /app
 
 # Expose the listening port
 EXPOSE 5000
 
-ENTRYPOINT ["/usr/bin/gunicorn", "-b", "0.0.0.0:5000", "synctool:app"]
+ENTRYPOINT ["/usr/bin/gunicorn", "-b", "0.0.0.0:$PORT", "synctool:app"]

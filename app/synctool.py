@@ -1,19 +1,12 @@
 import logging
 import json
-from flask import Flask, render_template, request, abort, send_file
+from flask import Flask, render_template, request, abort, send_from_directory
 import os
-import base64
 
 app = Flask(__name__)
 #CORS(app, resources=r'/api/*')		# Allow any origin for requests to paths starting with /api/
 
-"""Get sensitive data from env vars"""
-EBAY_OAUTH_CLIENT_ID = os.environ.get('EBAY_OAUTH_CLIENT_ID')
-EBAY_OAUTH_CLIENT_SECRET = os.environ.get('EBAY_OAUTH_CLIENT_SECRET')
-
-if None in [EBAY_OAUTH_CLIENT_ID, EBAY_OAUTH_CLIENT_SECRET]:
-	raise RuntimeError("Missing one or more environment variables")
-
+STATIC_FILE_DIR = os.environ.get('STATIC_FILE_DIR', '/static')
 """Logging setup"""
 # create logger
 logger = logging.getLogger('io.glitchlab.ebay-sync-tool')
@@ -48,10 +41,15 @@ def create_system():
 	
 	return("Hello from Flask!")
 	
-@app.route('/api/oauth-callback')
-def handle_oauth_callback():
-	oauth_credentials = base64.b64encode(EBAY_OAUTH_CLIENT_ID + ':' + EBAY_OAUTH_CLIENT_SECRET)
-	
+@app.route('/<path:file>')
+def serve_root(file):
+	logger.debug('Request for file {}'.format(file))
+	return send_from_directory(STATIC_FILE_DIR, file)
+		
+@app.route('/')
+def index():
+	logger.debug('Got a request for root')
+	return send_from_directory(STATIC_FILE_DIR, 'index.html')
 	
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')
