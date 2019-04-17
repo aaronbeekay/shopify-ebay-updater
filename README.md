@@ -5,18 +5,20 @@ _A quick and dirty sync tool between Shopify items and eBay_
 To build and run the application locally, make sure you have Docker installed on your local machine. Then all you should need to do is:
 
 ```
-docker-compose build
-docker-compose up
+docker build -t ebay-sync -f Dockerfile.flask .
+docker run -it -p 5000:5000 ebay-sync
 ```
+
+When you do this, the application will be available at http://localhost:5000/ .
 
 **TODO:** Later, when the app actually talks to things, you'll need to set local environment keys for your eBay and Shopify API keys. **Don't commit API keys to source control.**
 
 ## Contributing
 ### Static files (HTML interface)
-These files are served by Nginx out of the `static/` directory. Just add or edit files in this directory and they will be available in the webroot.
+These files are served by Flask out of the `static/` directory. Just add or edit files in this directory and they will be available in the webroot.
 
 ### Backend (API requests)
-Nginx will automatically redirect any request under the `<hostname>/api/` path to Flask.
+Flask handles all of the HTTP requests that come in. The API endpoints should all be kept under the `/api/` path for clarity's sake.
 
 The Python path is set to the `app/` directory, so any Python modules you save there can be imported from the main Flask module (`synctool.py`). 
 
