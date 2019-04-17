@@ -6,6 +6,7 @@ import os
 app = Flask(__name__)
 #CORS(app, resources=r'/api/*')		# Allow any origin for requests to paths starting with /api/
 
+STATIC_FILE_DIR = os.environ.get('STATIC_FILE_DIR', '/static')
 """Logging setup"""
 # create logger
 logger = logging.getLogger('io.glitchlab.ebay-sync-tool')
@@ -42,7 +43,7 @@ def create_system():
 	
 @app.route('/<path:file>')
 def serve_root(file):
-	return send_from_directory('/static', file)
+	return send_from_directory(STATIC_FILE_DIR, file)
 	
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')
