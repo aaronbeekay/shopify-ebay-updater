@@ -43,7 +43,10 @@ def create_system():
 	
 @app.route('/<path:file>')
 def serve_root(file):
-	return send_from_directory(STATIC_FILE_DIR, file)
+	if file == '':
+		return send_from_directory(STATIC_FILE_DIR, 'index.html')
+	else:
+		return send_from_directory(STATIC_FILE_DIR, file)
 	
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')
