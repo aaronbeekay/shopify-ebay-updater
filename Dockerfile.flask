@@ -6,6 +6,7 @@ RUN apk add --no-cache bash git py3-gunicorn py3-flask	\
 	&& pip3 install flask flask-cors 
 	
 COPY ./app /app
+COPY ./static /static
 
 ENV PYTHONPATH /app
 
