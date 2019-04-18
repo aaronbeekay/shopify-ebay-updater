@@ -3,3 +3,4 @@ ShopifyAPI
 flask
 gunicorn
 requests
+flask-cors
