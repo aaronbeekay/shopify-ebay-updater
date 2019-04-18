@@ -2,3 +2,4 @@
 ShopifyAPI
 flask
 gunicorn
+requests
