@@ -61,7 +61,7 @@ def create_system():
 @app.route('/api/ebay-oauth-callback', methods=['GET'])
 def handle_ebay_callback():
 	logger.debug('/api/ebay-oauth-callback')
-	return json.dumps(request.args) + json.dumps(request.headers) + json.dumps(request.host)
+	return json.dumps(request.args) + json.dumps(request.headers.to_wsgi_list()) + json.dumps(request.host)
 
 # Serve static files using send_from_directory()	
 @app.route('/<path:file>')
