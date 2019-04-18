@@ -58,7 +58,7 @@ def create_system():
 	
 	return("Hello from Flask!")
 	
-@app.route('/api/ebay-oauth-callback' methods=['GET'])
+@app.route('/api/ebay-oauth-callback', methods=['GET'])
 def handle_ebay_callback():
 	logger.debug('/api/ebay-oauth-callback')
 	return json.dumps(request.args) + json.dumps(request.headers) + json.dumps(request.host)
