@@ -6,7 +6,24 @@ import os
 app = Flask(__name__)
 #CORS(app, resources=r'/api/*')		# Allow any origin for requests to paths starting with /api/
 
-STATIC_FILE_DIR = os.environ.get('STATIC_FILE_DIR', '/static')
+"""Pick up data from env vars"""
+STATIC_FILE_DIR 			= os.environ.get('STATIC_FILE_DIR', 
+											 '/static'			)
+EBAY_OAUTH_CLIENT_ID 		= os.environ.get('EBAY_OAUTH_CLIENT_ID',
+											 None 				)
+EBAY_OAUTH_CLIENT_SECRET 	= os.environ.get('EBAY_OAUTH_CLIENT_SECRET',
+											 None				)
+EBAY_OAUTH_TOKEN_ENDPOINT 	= os.environ.get('EBAY_OAUTH_TOKEN_ENDPOINT',
+											 'https://api.ebay.com/identity/v1/oauth2/token' )	# this is the prod URL
+EBAY_OAUTH_CONSENT_ENDPOINT = os.environ.get('EBAY_OAUTH_CONSENT_ENDPOINT,
+											 'https://auth.ebay.com/oauth2/authorize' ) 		# also the prod URL
+EBAY_APP_RUNAME 			= os.environ.get('EBAY_APP_RUNAME',
+											 None )
+EBAY_SCOPES 				= os.environ.get('EBAY_SCOPES',
+											'https://api.ebay.com/oauth/api_scope ' +
+											'https://api.ebay.com/oauth/api_scope/sell.inventory ' +
+											'https://api.ebay.com/oauth/api_scope/sell.account.readonly' )
+
 """Logging setup"""
 # create logger
 logger = logging.getLogger('io.glitchlab.ebay-sync-tool')
@@ -41,6 +58,11 @@ def create_system():
 	
 	return("Hello from Flask!")
 	
+@app.route('/api/ebay-oauth-callback')
+def handle_ebay_callback():
+	return json.dumps(request.args) + json.dumps(request.headers) + json.dumps(request.host)
+
+# Serve static files using send_from_directory()	
 @app.route('/<path:file>')
 def serve_root(file):
 	logger.debug('Request for file {}'.format(file))
