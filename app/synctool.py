@@ -80,7 +80,7 @@ def handle_ebay_callback():
 		except RuntimeError as e:
 			return 'fuckin ebay problem: ' + e
 	else:
-		logger.error("Didn't get a code back from eBay oauth callback. Possibly user declined. eBay says: " + json.dumps(request.json))
+		logger.error("Didn't get a code back from eBay oauth callback. Possibly user declined. eBay says: " + json.dumps(request.json()))
 		
 @app.route('/api/test-ebay-call')
 def test_ebay_api_call():
@@ -88,7 +88,7 @@ def test_ebay_api_call():
 		response = requests.get(
 			'https://api.ebay.com/sell/inventory/v1/inventory_item',
 			headers={'Authorization': 'Bearer {}'.format(session['access_token'])})
-		return response.json
+		return json.dumps(response.json())
 	elif 'refresh_token' in session:
 		# access token is expired, go refresh it
 		logger.debug('User access token expired, refreshing it...')
