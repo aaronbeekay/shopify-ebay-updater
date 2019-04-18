@@ -1,11 +1,25 @@
 import logging
 import json
-from flask import Flask, render_template, request, abort, send_from_directory, session, redirect, url_for
+from flask import Flask, render_template, request, abort, send_from_directory, session, redirect, url_for, jsonify
 import os
 import requests
 import datetime
+from flask_cors import CORS
+
+"""Debug URLLib requests"""
+from http.client import HTTPConnection
+HTTPConnection.debuglevel = 1
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
 
 """Pick up data from env vars"""
+if os.path.exists('.env'):
+	from dotenv import load_dotenv
+	load_dotenv()
+	
 STATIC_FILE_DIR 			= os.environ.get('STATIC_FILE_DIR', 
 											 '/static'			)
 APP_SECRET_KEY 				= os.environ.get('APP_SECRET_KEY',									# for encrypting sesh
@@ -32,11 +46,12 @@ SHOPIFY_API_KEY 			= os.environ.get('SHOPIFY_API_KEY',
 SHOPIFY_API_PW 				= os.environ.get('SHOPIFY_API_PW',
 											 None )
 SHOPIFY_STORE_DOMAIN 		= os.environ.get('SHOPIFY_STORE_DOMAIN',
-											 'glitchlab.io' )
+											 'glitchlab.myshopify.com' )
 											
 """Flask app setup"""
 app = Flask(__name__)
 app.secret_key = APP_SECRET_KEY
+CORS(app)
 
 """Logging setup"""
 # create logger
@@ -75,12 +90,18 @@ def create_system():
 @app.route('/api/shopify/product')
 def get_shopify_product():
 	if 'id' in request.args:
-		logger.debug("Trying to GET the Shopify product {}".format(request.args['id']))
+		url = 'https://' + SHOPIFY_STORE_DOMAIN + '/admin/api/2019-04/products/' + request.args['id'] + '.json'
+		logger.debug("Trying to GET the Shopify product {} by hitting {}".format(request.args['id'], url))
+		logger.debug("Using auth: {}:{}".format(SHOPIFY_API_KEY,SHOPIFY_API_PW))
 		response = requests.get(
-			'https://' + SHOPIFY_STORE_DOMAIN + '/admin/api/2019-04/products/#' + request.args['id'] + '.json',
+			url,
 			auth=(SHOPIFY_API_KEY,SHOPIFY_API_PW)
 		)
-		return response.json()
+		try:
+			return jsonify(response.json())
+		except json.JSONDecodeError:
+			logger.debug('Shopify said: ' + response.text)
+			return 'Shopify said...' + response.text
 	else:
 		return "You gotta supply a Shopify product ID in the 'id' GET param"
 	
