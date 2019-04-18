@@ -7,45 +7,76 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <title>Shopify-eBay sync - SLIRP</title>
   </head>
   <body>
     <div class="container">
-    	<div class="col">  	</div>
-    	<div class="col-10 col-xl-6">
-    		<h1>Shopify sync</h1>
-    		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"> 
-			<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-
-			<form>
-			  <div class="form-group row">
-				<label for="shopify-id" class="col-4 col-form-label">Shopify ID</label> 
-				<div class="col-8">
-				  <input id="shopify-id" name="shopify-id" type="text" class="form-control" required="required">
-				</div>
+    	<div class="row">
+			<div class="col">  	</div>
+			<div class="col-10 col-xl-6">
+				<h1>Shopify sync</h1>
+			</div>
+			<div class="col"></div>
+		</div>
+		<div class="row">
+			<div class="col-6">
+				<form>
+				  	<div class="form-group row">
+						<label for="shopify-id" class="col-4 col-form-label">Shopify ID</label> 
+						<div class="col-8">
+					  		<input id="shopify-id" name="shopify-id" type="text" class="form-control" required="required">
+						</div>
+				  	</div>
+				  	
+				  	<div class="form-group row">
+						<label for="shopify-title" class="col-4 col-form-label">Title</label> 
+						<div class="col-8">
+					  		<input id="shopify-title" name="shopify-title" type="text" class="form-control">
+						</div>
+				  	</div>
+				  	
+				  	<div class="form-group row">
+						<label for="shopify-description" class="col-4 col-form-label">Description</label> 
+						<div class="col-8">
+					  		<input id="shopify-description" name="shopify-description" type="text" class="form-control">
+						</div>
+				  	</div>
+				  	
+				  	<div class="form-group row">
+						<label for="shopify-weight" class="col-4 col-form-label">Weight</label> 
+						<div class="col-8">
+					  		<input id="shopify-weight" name="shopify-weight" type="text" class="form-control">
+						</div>
+				  	</div>
+				  	
+				  	<div class="form-group row">
+						<label for="shopify-condition" class="col-4 col-form-label">Condition</label> 
+						<div class="col-8">
+					  		<input id="shopify-condition" name="shopify-condition" type="text" class="form-control">
+						</div>
+				  	</div>
+				  	
+				  	
+				</form>
+			</div>
+			<div class="col-6">
+				<form>
+				<div class="form-group row">
+					<label for="ebay-id" class="col-4 col-form-label">eBay ID</label> 
+					<div class="col-8">
+				  		<input id="ebay-id" name="ebay-id" type="text" class="form-control">
+					</div>
 			  </div>
-			  <div class="form-group row">
-				<label for="ebay-id" class="col-4 col-form-label">eBay ID</label> 
-				<div class="col-8">
-				  <input id="ebay-id" name="ebay-id" type="text" class="form-control">
-				</div>
-			  </div> 
-			  <div class="form-group row">
-				<div class="offset-4 col-8">
-				  <button name="submit" type="submit" class="btn btn-primary">Sync</button>
-				  <br>
-				  <label class="font-weight-light" for="submit">This button doesn't do anything yet</label>
-				</div>
-			  </div>
-			</form>
+			</div>
     	</div>
-    	<div class="col">  	</div>
     </div>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="js/slirp-shopify.js"></script>
   </body>
 </html>
