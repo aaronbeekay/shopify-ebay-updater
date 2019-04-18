@@ -15,7 +15,7 @@ EBAY_OAUTH_CLIENT_SECRET 	= os.environ.get('EBAY_OAUTH_CLIENT_SECRET',
 											 None				)
 EBAY_OAUTH_TOKEN_ENDPOINT 	= os.environ.get('EBAY_OAUTH_TOKEN_ENDPOINT',
 											 'https://api.ebay.com/identity/v1/oauth2/token' )	# this is the prod URL
-EBAY_OAUTH_CONSENT_ENDPOINT = os.environ.get('EBAY_OAUTH_CONSENT_ENDPOINT,
+EBAY_OAUTH_CONSENT_ENDPOINT = os.environ.get('EBAY_OAUTH_CONSENT_ENDPOINT',
 											 'https://auth.ebay.com/oauth2/authorize' ) 		# also the prod URL
 EBAY_APP_RUNAME 			= os.environ.get('EBAY_APP_RUNAME',
 											 None )
