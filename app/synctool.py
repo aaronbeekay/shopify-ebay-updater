@@ -76,7 +76,7 @@ def handle_ebay_callback():
 			session['access_token'] = authdict['access_token']
 			session['access_token_expiry'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=authdict['expires_in'])
 			session['refresh_token'] = authdict['refresh_token']
-			return redirect(url_for('/'))
+			return redirect(url_for('test_ebay_api_call'))
 		except RuntimeError as e:
 			return 'fuckin ebay problem: ' + e
 	else:
@@ -95,7 +95,7 @@ def test_ebay_api_call():
 		# TODO refresh the token here
 		return "your access token is expired"
 	else:
-		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing')
+		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing: {}'.format(EBAY_OAUTH_CONSENT_URL))
 		return redirect(EBAY_OAUTH_CONSENT_URL)
 
 # Serve static files using send_from_directory()	
