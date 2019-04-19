@@ -128,7 +128,7 @@ def test_ebay_auth():
 	except json.JSONDecodeError:
 		logger.warning("Got a weird response from eBay when checking auth credentials: {}".format(response.text))
 		
-	if "errors" not in response and "inventoryItems" in response:
+	if "errors" not in j and "inventoryItems" in j:
 		return jsonify({'ebay_auth_success': True})
 	else:
 		logger.warning('Failed eBay auth verification in a way that is not handled... eBay said: {}'.format(response.text))

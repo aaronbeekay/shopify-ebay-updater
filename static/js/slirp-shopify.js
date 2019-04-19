@@ -131,6 +131,39 @@ function shopify_product_fields_enabled(state){
 	}
  }
  
+/* Hit the backend eBay login status endpoint to see if we have good creds. Update the indicator as we go */
+function check_ebay_auth(){
+	set_ebay_login_status(login_status.checking);
+	$.ajax({
+		type: "GET",
+		url: "/api/ebay/test-auth",
+		success: function(data){
+			if (data.ebay_auth_success === True){
+				set_ebay_login_status(login_status.ok);
+			} else {
+				set_ebay_login_status(login_status.fail);
+			}
+		}
+	})
+}
+
+/* Hit the backend Shopify login status endpoint to see if we have good creds. Update the indicator as we go */
+function check_shopify_auth(){
+	set_shopify_login_status(login_status.checking);
+	$.ajax({
+		type: "GET",
+		url: "/api/shopify/test-auth",
+		success: function(data){
+			if (data.shopify_auth_success === True){
+				set_shopify_login_status(login_status.ok);
+			} else {
+				set_shopify_login_status(login_status.fail);
+			}
+		}
+	})
+}
+
+ 
 /* Set the state of the auth badge at the top of the page. */
 const login_status = {"checking": 1, "ok": 2, "fail": 3};
 function set_shopify_login_status(state){
@@ -212,10 +245,15 @@ function set_ebay_login_status(state){
 			$('div#ebay-auth-status-spinner').attr('hidden', true);
 	}
 }
-
-$('input#shopify-id').change(function(){
-	loadShopifyProduct($('input#shopify-id').val());
-});
-$('input#ebay-sku').change(function(){
-	loadEbayProduct($('input#ebay-sku').val());
-});
+$(document).ready(function(){
+	$('input#shopify-id').change(function(){
+		loadShopifyProduct($('input#shopify-id').val());
+	});
+	
+	$('input#ebay-sku').change(function(){
+		loadEbayProduct($('input#ebay-sku').val());
+	});
+	
+	check_ebay_auth();
+	check_shopify_auth();
+})
