@@ -47,11 +47,11 @@ function populateShopifyProductInfo(product){
 
 /* Request a single eBay product from the backend by its SKU, then pass it to populateEbayProductInfo() */
 function loadEbayProduct( ebay_sku ){
-	var sku = ebay_sku.to_string();
+	//var sku = ebay_sku.to_string();
 	ebay_product_fields_enabled(false);
 	$.ajax({
 		type: "GET",
-		url: '/api/ebay/product?id=' + sku,
+		url: '/api/ebay/product?id=' + ebay_sku,
 		success: function(data){ populateEbayProductInfo(data) }
 	});
 }
@@ -60,10 +60,22 @@ function loadEbayProduct( ebay_sku ){
 function populateEbayProductInfo(product){	
 	ep = product;
 	
-	$('input#ebay-title').val(ep.title);
-	$('textarea#ebay-description').val(ep.description);
+	$('input#ebay-title').val(ep.product.title);
+	if('description' in ep.product){
+		$('textarea#ebay-description').val(ep.product.description);
+	} else {
+		// set the hint text to the desc field to indicate there is no desc
+		$('textarea#ebay-description').attr('placeholder', 'No eBay description set');
+	}
 	
-	$('input#ebay-weight').val(ep.weight.value);
+	if (('weight' in ep.packageWeightAndSize) & ('value' in ep.packageWeightAndSize.weight)){
+		$('input#ebay-weight').val(ep.packageWeightAndSize.weight.value);
+		// TODO: show unit
+	} else {
+		// set hint text in weight field to indicate there is no weight set
+		$('input#ebay-weight').attr('placeholder', 'No eBay weight set');
+	}
+	
 	$('input#ebay-condition').val(ep.condition);
 	
 	ebay_product_fields_enabled(true);
@@ -103,7 +115,7 @@ function ebay_product_fields_enabled(state){
 /* Disable (lock out) the Shopify product fields while the stuff is loading from backend
  * 	Also displays/hides the spinner in the Shopify ID box
  */
- function shopify_product_fields_enabled(state){
+function shopify_product_fields_enabled(state){
  	if(state===false){ 	
 		// Show spinner
 		$('#shopify-loading-spinner').show()
@@ -118,7 +130,92 @@ function ebay_product_fields_enabled(state){
 		$('.shopify-product-property').removeAttr('disabled');
 	}
  }
+ 
+/* Set the state of the auth badge at the top of the page. */
+const login_status = {"checking": 1, "ok": 2, "fail": 3};
+function set_shopify_login_status(state){
+	switch(state){
+		case login_status.checking:
+			// Set the badge to "checking" state
+			$('#shopify-auth-status').removeClass('badge-danger');
+			$('#shopify-auth-status').removeClass('badge-success');
+			$('#shopify-auth-status').addClass('badge-light');
+			
+			$('span#shopify-auth-status-ok').attr('hidden', true);
+			$('span#shopify-auth-status-fail').attr('hidden', true);
+			$('span#shopify-auth-status-checking').removeAttr('hidden');
+			
+			$('div#shopify-auth-status-spinner').removeAttr('hidden');
+			break;
+		case login_status.ok:
+			// Set the badge to "OK" state
+			$('#shopify-auth-status').removeClass('badge-danger');
+			$('#shopify-auth-status').addClass('badge-success');
+			$('#shopify-auth-status').removeClass('badge-light');
+			
+			$('span#shopify-auth-status-ok').removeAttr('hidden');
+			$('span#shopify-auth-status-fail').attr('hidden', true);
+			$('span#shopify-auth-status-checking').attr('hidden', true);
+			
+			$('div#shopify-auth-status-spinner').attr('hidden', true);
+			break;
+		case login_status.fail:
+			// Set the badge to the failed state
+			$('#shopify-auth-status').addClass('badge-danger');
+			$('#shopify-auth-status').removeClass('badge-success');
+			$('#shopify-auth-status').removeClass('badge-light');
+			
+			$('span#shopify-auth-status-ok').attr('hidden', true);
+			$('span#shopify-auth-status-fail').removeAttr('hidden');
+			$('span#shopify-auth-status-checking').attr('hidden', true);
+			
+			$('div#shopify-auth-status-spinner').attr('hidden', true);
+	}
+}
+
+function set_ebay_login_status(state){
+	switch(state){
+		case login_status.checking:
+			// Set the badge to "checking" state
+			$('#ebay-auth-status').removeClass('badge-danger');
+			$('#ebay-auth-status').removeClass('badge-success');
+			$('#ebay-auth-status').addClass('badge-light');
+			
+			$('span#ebay-auth-status-ok').attr('hidden', true);
+			$('span#ebay-auth-status-fail').attr('hidden', true);
+			$('span#ebay-auth-status-checking').removeAttr('hidden');
+			
+			$('div#ebay-auth-status-spinner').removeAttr('hidden');
+			break;
+		case login_status.ok:
+			// Set the badge to "OK" state
+			$('#ebay-auth-status').removeClass('badge-danger');
+			$('#ebay-auth-status').addClass('badge-success');
+			$('#ebay-auth-status').removeClass('badge-light');
+			
+			$('span#ebay-auth-status-ok').removeAttr('hidden');
+			$('span#ebay-auth-status-fail').attr('hidden', true);
+			$('span#ebay-auth-status-checking').attr('hidden', true);
+			
+			$('div#ebay-auth-status-spinner').attr('hidden', true);
+			break;
+		case login_status.fail:
+			// Set the badge to the failed state
+			$('#ebay-auth-status').addClass('badge-danger');
+			$('#ebay-auth-status').removeClass('badge-success');
+			$('#ebay-auth-status').removeClass('badge-light');
+			
+			$('span#ebay-auth-status-ok').attr('hidden', true);
+			$('span#ebay-auth-status-fail').removeAttr('hidden');
+			$('span#ebay-auth-status-checking').attr('hidden', true);
+			
+			$('div#ebay-auth-status-spinner').attr('hidden', true);
+	}
+}
 
 $('input#shopify-id').change(function(){
 	loadShopifyProduct($('input#shopify-id').val());
+});
+$('input#ebay-sku').change(function(){
+	loadEbayProduct($('input#ebay-sku').val());
 });

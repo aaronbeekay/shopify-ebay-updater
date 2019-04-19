@@ -89,6 +89,51 @@ def create_system():
 	
 	return("Hello from Flask!")
 	
+@app.route('/api/shopify/test-auth')
+def test_shopify_auth():
+	"""Do a test call to the Shopify API to make sure we have good credentials"""
+	response = requests.get(
+		'https://' + SHOPIFY_STORE_DOMAIN + '/admin/api/2019-04/products/count.json',
+		auth=(SHOPIFY_API_KEY,SHOPIFY_API_PW)
+	)
+	
+	try:
+		j = response.json()
+	except json.JSONDecodeError:
+		logger.warning('Got a weird response from Shopify when trying to check creds: {}'.format(response.text))
+		return jsonify({'shopify_auth_success': False})
+		
+	if 'count' in j:
+		return jsonify({'shopify_auth_success': True})
+	else:
+		return jsonify({'shopify_auth_success': False})
+	
+@app.route('/api/ebay/test-auth')
+def test_ebay_auth():
+	"""Do a test call to the eBay API to make sure we have good credentials"""
+	
+	if 'access_token' not in session:
+		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing'})
+		
+	if session.get('access_token_expiry') < datetime.datetime.utcnow():
+		# TODO: Should try to refresh token here
+		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_expired'})
+	
+	response = requests.get(
+		'https://api.ebay.com/sell/inventory/v1/inventory_item?limit=1',
+		headers={'Authorization': 'Bearer {}'.format(session['access_token'])})
+	
+	try:
+		j = response.json()
+	except json.JSONDecodeError:
+		logger.warning("Got a weird response from eBay when checking auth credentials: {}".format(response.text))
+		
+	if "errors" not in response and "inventoryItems" in response:
+		return jsonify({'ebay_auth_success': True})
+	else:
+		logger.warning('Failed eBay auth verification in a way that is not handled... eBay said: {}'.format(response.text))
+		return jsonify({'ebay_auth_success': False, 'error': 'lazy_programmer_error'})
+	
 @app.route('/api/shopify/product')
 def get_shopify_product():
 	if 'id' in request.args:

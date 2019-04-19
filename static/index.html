@@ -13,12 +13,41 @@
   </head>
   <body>
     <div class="container">
-    	<div class="row">
-			<div class="col">  	</div>
-			<div class="col-10 col-xl-6">
+    	<div class="row my-5">
+			<div class="col-9">
 				<h1>Shopify sync</h1>
 			</div>
-			<div class="col"></div>
+			<div class="col-3">
+				<!-- Authentication status badges -->
+				<div class="row my-0">
+					<div class="col-7">
+						<p class="mb-1 pb-2 mr-3 float-right">Shopify auth: </p>
+					</div>
+					<div class="col-5">
+						<span class="badge badge-light float-right px-3 py-2" id="shopify-auth-status" style="min-width: 10em;">
+							<span id="shopify-auth-status-checking" class="text-left float-left">Checking...</span>
+							<span id="shopify-auth-status-ok" class="text-center float-center" hidden>OK</span>
+							<span id="shopify-auth-status-fail" class="text-center float-center" hidden>Fail</span>
+							<div class="spinner-border spinner-border-sm ml-2" id="shopify-auth-status-spinner" role="status" hidden><span class="sr-only">Checking Shopify auth status...</span></div>
+						</span>
+						
+					</div>
+				</div>
+				
+				<div class="row my-0">
+					<div class="col-7">
+						<p class="mb-1 pb-2 mr-3 float-right">eBay auth: </p>
+					</div>
+					<div class="col-5">
+						<span class="badge badge-light float-right px-3 py-2" id="ebay-auth-status" style="min-width: 10em;">
+							<span id="ebay-auth-status-checking" class="text-left float-left">Checking...</span>
+							<span id="ebay-auth-status-ok" class="text-center float-center" hidden>OK</span>
+							<span id="ebay-auth-status-fail" class="text-center float-center" hidden>Fail</span>
+							<div class="spinner-border spinner-border-sm ml-2" id="ebay-auth-status-spinner" role="status" hidden><span class="sr-only">Checking eBay auth status...</span></div></span>
+					</div>
+				</div>
+
+			</div>
 		</div>
 		<form>
 			<!-- Item IDs -->
@@ -38,7 +67,7 @@
 				</div>
 				<div class="col-sm-6">
 					<div class="form-group row">
-						<label for="ebay-id" class="col-2 col-form-label">eBay ID</label> 
+						<label for="ebay-id" class="col-2 col-form-label">eBay SKU</label> 
 						<div class="col-8">
 							<input id="ebay-sku" name="ebay-sku" type="text" class="form-control">
 						</div>
@@ -157,6 +186,50 @@
 							<input id="ebay-condition" name="ebay-condition" type="text" class="form-control ebay-product-property">
 						</div>
 					</div>
+				</div>
+			</div>
+			
+			<!-- Manufacturer -->
+			<div class="row">
+				<!-- Shopify -->
+				<div class="col-sm-6">
+					<div class="form-group row">
+						<label for="shopify-manufacturer" class="col-2 col-form-label">Manufacturer</label> 
+						<div class="col-10">
+					  		<input id="shopify-manufacturer" name="shopify-manufacturer" type="text" class="form-control shopify-product-property">
+						</div>
+				  	</div>
+				</div>
+				<!-- eBay -->
+				<div class="col-sm-6">
+					<div class="form-group row">
+						<label for="ebay-mpn" class="col-2 col-form-label">Manufacturer</label> 
+						<div class="col-10">
+					  		<input id="ebay-manufacturer" name="ebay-manufacturer" type="text" class="form-control ebay-product-property">
+						</div>
+				  	</div>
+				</div>
+			</div>
+			
+			<!-- MPN -->
+			<div class="row">
+				<!-- Shopify -->
+				<div class="col-sm-6">
+					<div class="form-group row">
+						<label for="shopify-mpn" class="col-2 col-form-label">MPN</label> 
+						<div class="col-10">
+					  		<input id="shopify-mpn" name="shopify-mpn" type="text" class="form-control shopify-product-property">
+						</div>
+				  	</div>
+				</div>
+				<!-- eBay -->
+				<div class="col-sm-6">
+					<div class="form-group row">
+						<label for="ebay-mpn" class="col-2 col-form-label">MPN</label> 
+						<div class="col-10">
+					  		<input id="ebay-mpn" name="ebay-mpn" type="text" class="form-control ebay-product-property">
+						</div>
+				  	</div>
 				</div>
 			</div>
 			
