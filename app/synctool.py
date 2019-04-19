@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, abort, send_from_directory, s
 import os
 import requests
 import datetime
+import glitchlab_shopify
 from flask_cors import CORS
 
 """Debug URLLib requests"""
