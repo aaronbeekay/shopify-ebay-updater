@@ -137,6 +137,24 @@ def test_ebay_api_call():
 	else:
 		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing: {}'.format(EBAY_OAUTH_CONSENT_URL))
 		return redirect(EBAY_OAUTH_CONSENT_URL)
+		
+@app.route('/api/ebay/product', methods=['GET'])
+def get_ebay_product():
+	if 'id' not in request.args:
+		logger.info("This request doesn't have an id attached to it")
+		return 'Try again with an "id" parameter'
+		
+	if 'access_token' not in session or session.get('access_token_expiry') < datetime.datetime.utcnow():
+		# The client side will need to handle logging back in
+		return jsonify({'error': 'ebay_auth_invalid'})
+	
+	try:
+		p = glitchlab_shopify.get_ebay_product( session['access_token'], request['id'] )
+		return jsonify(p)
+	except glitchlab_shopify.AuthenticationError as e:
+		return jsonify({'error': 'ebay_auth_invalid', 'message': e.message})
+	except glitchlab_shopify.ItemNotFoundError as e:
+		return jsonify({'error': 'ebay_item_not_found', 'message': e.message})
 
 # Serve static files using send_from_directory()	
 @app.route('/<path:file>')
@@ -172,6 +190,17 @@ def get_access_token(auth_code):
 		logger.error('No access token in eBay response when we tried to get one. Probably bad creds somewhere. eBay says: {}'.format(json.dumps(response.json())))
 		raise RuntimeError('No access token in response from eBay. Probably some kind of fucking stupid auth problem.')
 	return authDict
+	
+"""Exceptions"""
+# class InvalidRequest(Exception):
+# 	status_code = 400
+# 	
+# 	def __init__(self, message, status_code=None, payload=None)
+# 		Exception.__init__(self)
+# 		self.message = message
+# 		if status_code is not None:
+# 			self.status_code = status_code
+# 		self.payload = payload
 	
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')
