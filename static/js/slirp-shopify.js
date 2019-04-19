@@ -138,7 +138,7 @@ function check_ebay_auth(){
 		type: "GET",
 		url: "/api/ebay/test-auth",
 		success: function(data){
-			if (data.ebay_auth_success === True){
+			if (data.ebay_auth_success === true){
 				set_ebay_login_status(login_status.ok);
 			} else {
 				set_ebay_login_status(login_status.fail);
@@ -154,7 +154,7 @@ function check_shopify_auth(){
 		type: "GET",
 		url: "/api/shopify/test-auth",
 		success: function(data){
-			if (data.shopify_auth_success === True){
+			if (data.shopify_auth_success === true){
 				set_shopify_login_status(login_status.ok);
 			} else {
 				set_shopify_login_status(login_status.fail);
