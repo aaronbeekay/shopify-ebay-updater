@@ -3,6 +3,7 @@
 // the product (and its variants) that we're currently considering
 var p = null;
 var vs = [];
+var ep = null;
 
 function loadShopifyProduct(product_id){
 	var pid = product_id.toString();
@@ -15,6 +16,7 @@ function loadShopifyProduct(product_id){
 	});
 }
 
+/* Given an object representing one Shopify product, populate the form fields with its details. */
 function populateShopifyProductInfo(product){	
 	p = product.product;
 	vs = p.variants;
@@ -41,7 +43,30 @@ function populateShopifyProductInfo(product){
 	$('input#shopify-condition').val('??');
 	
 	shopify_product_fields_enabled(true);
+}
 
+/* Request a single eBay product from the backend by its SKU, then pass it to populateEbayProductInfo() */
+function loadEbayProduct( ebay_sku ){
+	var sku = ebay_sku.to_string();
+	ebay_product_fields_enabled(false);
+	$.ajax({
+		type: "GET",
+		url: '/api/ebay/product?id=' + sku,
+		success: function(data){ populateEbayProductInfo(data) }
+	});
+}
+
+/* Given an object representing one eBay product, populate the eBay form fields with its details. */
+function populateEbayProductInfo(product){	
+	ep = product;
+	
+	$('input#ebay-title').val(ep.title);
+	$('textarea#ebay-description').val(ep.description);
+	
+	$('input#ebay-weight').val(ep.weight.value);
+	$('input#ebay-condition').val(ep.condition);
+	
+	ebay_product_fields_enabled(true);
 }
 
 /* Display or hide the condition field warning on the page.
@@ -55,6 +80,25 @@ function condition_field_structure_warning(display){
 		$('#condition-structure-warning').hide();
 	}
 }
+
+/* Disable (lock out) the eBay product fields while stuff is loading/saving from backend
+ * 	Also displays/hides the spinner in the eBay SKU box
+ */
+function ebay_product_fields_enabled(state){
+ 	if(state===false){ 	
+		// Show spinner
+		$('#ebay-loading-spinner').show()
+	
+		// Disable all of the input elements
+		$('.ebay-product-property').attr('disabled', true);
+	} else {
+		// Hide spinner
+		$('#ebay-loading-spinner').hide()
+	
+		// Disable all of the input elements
+		$('.ebay-product-property').removeAttr('disabled');
+	}
+ }
 
 /* Disable (lock out) the Shopify product fields while the stuff is loading from backend
  * 	Also displays/hides the spinner in the Shopify ID box
