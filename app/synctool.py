@@ -150,7 +150,7 @@ def get_ebay_product():
 		return jsonify({'error': 'ebay_auth_invalid'})
 	
 	try:
-		p = glitchlab_shopify.get_ebay_product( session['access_token'], request['id'] )
+		p = glitchlab_shopify.get_ebay_product( session['access_token'], request.args['id'] )
 		return jsonify(p)
 	except glitchlab_shopify.AuthenticationError as e:
 		return jsonify({'error': 'ebay_auth_invalid', 'message': e.message})
