@@ -243,7 +243,7 @@ def get_access_token(auth_code):
 		
 	# Set session params
 	session['access_token'] = authDict['access_token']
-	session['refresh_token_expiry'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=authDict['expires_in'])
+	session['access_token_expiry'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=authDict['expires_in'])
 	session['refresh_token'] = authDict['refresh_token']	
 		
 	return authDict
@@ -269,7 +269,7 @@ def refresh_access_token(refresh_token):
 	
 	# Set session params
 	session['access_token'] = authDict['access_token']
-	session['refresh_token_expiry'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=authDict['expires_in'])
+	session['access_token_expiry'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=authDict['expires_in'])
 	
 	return authDict
 	
