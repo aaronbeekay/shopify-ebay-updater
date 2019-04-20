@@ -141,7 +141,11 @@ function check_ebay_auth(){
 			if (data.ebay_auth_success === true){
 				set_ebay_login_status(login_status.ok);
 			} else {
-				set_ebay_login_status(login_status.fail);
+				if(data.error == 'ebay_auth_refreshed'){
+					check_ebay_auth();
+				} else {
+					set_ebay_login_status(login_status.fail);
+				}
 			}
 		}
 	})

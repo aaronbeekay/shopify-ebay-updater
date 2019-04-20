@@ -119,7 +119,7 @@ def test_ebay_auth():
 	
 		if 'refresh_token' in session:
 			refresh_access_token(session.get('refresh_token'))		
-			return redirect('/api/ebay/test-auth')
+			return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_refreshed', 'message': 'eBay token has been refreshed, try reloading'})
 		else:	
 			return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_expired'})
 	
