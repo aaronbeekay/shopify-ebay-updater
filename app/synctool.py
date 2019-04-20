@@ -41,6 +41,7 @@ EBAY_SCOPES 				= os.environ.get('EBAY_SCOPES',
 EBAY_OAUTH_CONSENT_URL 		= os.environ.get('EBAY_OAUTH_CONSENT_URL',
 											 'https://auth.ebay.com/oauth2/authorize?' +
 											 	'client_id={}'.format(EBAY_OAUTH_CLIENT_ID) +
+											 	'&response_type=code' +
 											 	'&redirect_uri={}'.format(EBAY_APP_RUNAME) +
 											 	'&scope={}'.format(EBAY_SCOPES) ) 		# also the prod URL
 SHOPIFY_API_KEY 			= os.environ.get('SHOPIFY_API_KEY',
