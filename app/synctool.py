@@ -116,8 +116,12 @@ def test_ebay_auth():
 		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing'})
 		
 	if session.get('access_token_expiry') < datetime.datetime.utcnow():
-		# TODO: Should try to refresh token here
-		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_expired'})
+	
+		if 'refresh_token' in session:
+			refresh_access_token(session.get('refresh_token'))		
+			return redirect('/api/ebay/test-auth')
+		else:	
+			return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_expired'})
 	
 	response = requests.get(
 		'https://api.ebay.com/sell/inventory/v1/inventory_item?limit=1',
@@ -178,8 +182,9 @@ def test_ebay_api_call():
 	elif 'refresh_token' in session:
 		# access token is expired, go refresh it
 		logger.debug('User access token expired, refreshing it...')
-		# TODO refresh the token here
-		return "your access token is expired"
+		new_auth = refresh_access_token( session['refresh_token'] )
+		
+		return redirect('/api/test-ebay-call')
 	else:
 		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing: {}'.format(EBAY_OAUTH_CONSENT_URL))
 		return redirect(EBAY_OAUTH_CONSENT_URL)
@@ -216,7 +221,7 @@ def index():
 def get_access_token(auth_code):
 	"""
 	Given an authorization code provided by eBay (`auth_code`), ping eBay and exchange it
-		for a user access token.
+		for a user access token. Set the session params accordingly.
 	"""
 	
 	# Build request body
@@ -234,7 +239,39 @@ def get_access_token(auth_code):
 	
 	if 'access_token' not in authDict:
 		logger.error('No access token in eBay response when we tried to get one. Probably bad creds somewhere. eBay says: {}'.format(json.dumps(response.json())))
-		raise RuntimeError('No access token in response from eBay. Probably some kind of fucking stupid auth problem.')
+		raise glitchlab_shopify.AuthenticationError('No access token in response from eBay. Probably some kind of fucking stupid auth problem.')
+		
+	# Set session params
+	session['access_token'] = authDict['access_token']
+	session['refresh_token_expiry'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=authDict['expires_in'])
+	session['refresh_token'] = authDict['refresh_token']	
+		
+	return authDict
+
+def refresh_access_token(refresh_token):
+	"""Go to eBay and get a new access token from the refresh token we already have"""
+	# Build request body
+	body = {
+		'grant_type': 'refresh_token',
+		'refresh_token': auth_code,
+		'scope': EBAY_SCOPES
+	}
+	response = requests.post(
+		EBAY_OAUTH_TOKEN_ENDPOINT,
+		data=body,
+		auth=(EBAY_OAUTH_CLIENT_ID,EBAY_OAUTH_CLIENT_SECRET)
+	)
+	authDict = response.json()
+	
+	if 'access_token' not in authDict:
+		logger.error('No access token in eBay response when we tried to get one. Probably bad creds somewhere. eBay says: {}'.format(json.dumps(response.json())))
+		raise glitchlab_shopify.AuthenticationError('No access token in response from eBay. Probably some kind of fucking stupid auth problem.')
+	
+	# Set session params
+	session['access_token'] = authDict['access_token']
+	session['refresh_token_expiry'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=authDict['expires_in'])
+	session['refresh_token'] = authDict['refresh_token']
+	
 	return authDict
 	
 """Exceptions"""
