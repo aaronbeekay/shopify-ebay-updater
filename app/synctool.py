@@ -253,7 +253,7 @@ def refresh_access_token(refresh_token):
 	# Build request body
 	body = {
 		'grant_type': 'refresh_token',
-		'refresh_token': auth_code,
+		'refresh_token': refresh_token,
 		'scope': EBAY_SCOPES
 	}
 	response = requests.post(
