@@ -143,6 +143,9 @@ function check_ebay_auth(){
 			} else {
 				if(data.error == 'ebay_auth_refreshed'){
 					check_ebay_auth();
+				} else if('ebay_consent_url' in data) {
+					$('a#ebay-auth-status-fail').attr('href', data.ebay_consent_url)
+					set_ebay_login_status(login_status.fail);
 				} else {
 					set_ebay_login_status(login_status.fail);
 				}
@@ -217,9 +220,11 @@ function set_ebay_login_status(state){
 			$('#ebay-auth-status').removeClass('badge-danger');
 			$('#ebay-auth-status').removeClass('badge-success');
 			$('#ebay-auth-status').addClass('badge-light');
+			$('#ebay-auth-status').removeAttr('hidden');
 			
 			$('span#ebay-auth-status-ok').attr('hidden', true);
 			$('span#ebay-auth-status-fail').attr('hidden', true);
+			$('a#ebay-auth-status-fail').attr('hidden', true);
 			$('span#ebay-auth-status-checking').removeAttr('hidden');
 			
 			$('div#ebay-auth-status-spinner').removeAttr('hidden');
@@ -229,9 +234,11 @@ function set_ebay_login_status(state){
 			$('#ebay-auth-status').removeClass('badge-danger');
 			$('#ebay-auth-status').addClass('badge-success');
 			$('#ebay-auth-status').removeClass('badge-light');
+			$('#ebay-auth-status').removeAttr('hidden');
 			
 			$('span#ebay-auth-status-ok').removeAttr('hidden');
 			$('span#ebay-auth-status-fail').attr('hidden', true);
+			$('a#ebay-auth-status-fail').attr('hidden', true);
 			$('span#ebay-auth-status-checking').attr('hidden', true);
 			
 			$('div#ebay-auth-status-spinner').attr('hidden', true);
@@ -239,11 +246,12 @@ function set_ebay_login_status(state){
 		case login_status.fail:
 			// Set the badge to the failed state
 			$('#ebay-auth-status').addClass('badge-danger');
+			$('#ebay-auth-status').attr('hidden', true);
 			$('#ebay-auth-status').removeClass('badge-success');
 			$('#ebay-auth-status').removeClass('badge-light');
 			
 			$('span#ebay-auth-status-ok').attr('hidden', true);
-			$('span#ebay-auth-status-fail').removeAttr('hidden');
+			$('a#ebay-auth-status-fail').removeAttr('hidden');
 			$('span#ebay-auth-status-checking').attr('hidden', true);
 			
 			$('div#ebay-auth-status-spinner').attr('hidden', true);

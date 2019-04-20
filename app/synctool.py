@@ -113,7 +113,7 @@ def test_ebay_auth():
 	"""Do a test call to the eBay API to make sure we have good credentials"""
 	
 	if 'access_token' not in session:
-		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing'})
+		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing', 'ebay_consent_url': EBAY_OAUTH_CONSENT_URL})
 		
 	if session.get('access_token_expiry') < datetime.datetime.utcnow():
 	
@@ -163,10 +163,8 @@ def handle_ebay_callback():
 	if 'code' in request.args:
 		try:
 			authdict = get_access_token(request.args['code'])
-			session['access_token'] = authdict['access_token']
-			session['access_token_expiry'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=authdict['expires_in'])
-			session['refresh_token'] = authdict['refresh_token']
-			return redirect(url_for('test_ebay_api_call'))
+			
+			return redirect('/')
 		except RuntimeError as e:
 			return 'fuckin ebay problem: ' + e
 	else:

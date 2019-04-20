@@ -39,11 +39,13 @@
 						<p class="mb-1 pb-2 mr-3 float-right">eBay auth: </p>
 					</div>
 					<div class="col-5">
-						<span class="badge badge-light float-right px-3 py-2" id="ebay-auth-status" style="min-width: 10em;">
+						<span class="badge badge-light float-right px-3 py-2" id="ebay-auth-status" style="min-width: 10em;" hidden>
 							<span id="ebay-auth-status-checking" class="text-left float-left">Checking...</span>
 							<span id="ebay-auth-status-ok" class="text-center float-center" hidden>OK</span>
 							<span id="ebay-auth-status-fail" class="text-center float-center" hidden>Fail</span>
-							<div class="spinner-border spinner-border-sm ml-2" id="ebay-auth-status-spinner" role="status" hidden><span class="sr-only">Checking eBay auth status...</span></div></span>
+							<div class="spinner-border spinner-border-sm ml-2" id="ebay-auth-status-spinner" role="status" hidden><span class="sr-only">Checking eBay auth status...</span></div>
+						</span>
+						<a href="#" role="button" class="btn btn-danger text-center float-right px-2 py-1 btn-sm" id="ebay-auth-status-fail" style="min-width: 8em;"><strong>Fail</strong> <small><br>(click to resolve)</small></a>
 					</div>
 				</div>
 
