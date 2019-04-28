@@ -214,7 +214,7 @@ def serve_root(file):
 		
 @app.route('/')
 def index():
-	logger.debug('Got a request for root')
+	logger.debug('Got a request for root, trying to serve {}'.format(os.path.join(STATIC_FILE_DIR, 'index.html')))
 	return send_from_directory(STATIC_FILE_DIR, 'index.html')
 	
 def get_access_token(auth_code):
