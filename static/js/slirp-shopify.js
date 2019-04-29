@@ -12,7 +12,6 @@ function loadShopifyProduct(product_id){
 		type: "GET",
 		url: '/api/shopify/product?id=' + pid,
 		success: function(data){ populateShopifyProductInfo(data) }
-		//headers: { 'Authorization': 'Basic ' + btoa(SHOPIFY_ADMIN_APIKEY + ':' + SHOPIFY_ADMIN_APIPW)}
 	});
 }
 
@@ -22,7 +21,9 @@ function populateShopifyProductInfo(product){
 	vs = p.variants;
 	
 	$('input#shopify-title').val(p.title);
-	$('textarea#shopify-description').val(p.body_html);
+	$('#shopify-description').summernote('reset');
+	$('#shopify-description').summernote('pasteHTML', p.body_html);
+	
 	
 	// Verify that the "Option 1" field is being used to describe product condition
 	if( p.options[0].name != 'Condition'){
@@ -43,6 +44,9 @@ function populateShopifyProductInfo(product){
 	$('input#shopify-condition').val('??');
 	
 	shopify_product_fields_enabled(true);
+	
+	// Update the eBay fields
+	update_ebay_fields_from_shopify();
 }
 
 /* Request a single eBay product from the backend by its SKU, then pass it to populateEbayProductInfo() */
@@ -126,7 +130,7 @@ function shopify_product_fields_enabled(state){
 		// Hide spinner
 		$('#shopify-loading-spinner').hide()
 	
-		// Disable all of the input elements
+		// Enable all of the input elements
 		$('.shopify-product-property').removeAttr('disabled');
 	}
  }
@@ -147,6 +151,7 @@ function check_ebay_auth(){
 					$('a#ebay-auth-status-fail').attr('href', data.ebay_consent_url)
 					set_ebay_login_status(login_status.fail);
 				} else {
+					$('a#ebay-auth-status-fail > small').remove()
 					set_ebay_login_status(login_status.fail);
 				}
 			}
@@ -213,6 +218,48 @@ function set_shopify_login_status(state){
 	}
 }
 
+/* Load the eBay item template from the static page */
+var ebay_desc_template = null;
+function load_ebay_template(){
+	$.ajax({
+		url: "/item-template.html",
+		success: function(data){ ebay_desc_template = data; }
+	});
+}
+
+/* Update the eBay item fields from the Shopify item fields */
+function update_ebay_fields_from_shopify(){
+	// Title
+	$('input#ebay-title').val( $('input#shopify-title').val() );
+	
+	// Description
+	apply_ebay_template();
+	
+	// Weight
+	// 	TODO: update weight appropriately
+	
+	// Condition
+	// 	TODO: map Shopify condition to eBay condition
+	
+	// Manufacturer
+	$('input#ebay-manufacturer').val( $('input#shopify-manufacturer').val() );
+	
+	// MPN
+	$('input#ebay-mpn').val( $('input#shopify-mpn').val() );
+}
+
+/* Render the Shopify item description (from the "Description" <textarea>) and dump it into the eBay
+ * 	description <textarea> 
+ */
+function apply_ebay_template(){
+	var sdesc = $('textarea#shopify-description').val();
+	var stitle = $('input#shopify-title').val();
+	var edesc = Mustache.render( ebay_desc_template, {
+					item_name: stitle,
+					item_description: sdesc			});
+	$('#ebay-description-iframe').attr('srcdoc', edesc);
+}
+
 function set_ebay_login_status(state){
 	switch(state){
 		case login_status.checking:
@@ -257,7 +304,30 @@ function set_ebay_login_status(state){
 			$('div#ebay-auth-status-spinner').attr('hidden', true);
 	}
 }
+
+/* Set up the rich text editors (Quill.js) for the description fields */
+var q_sdesc = null;
+var q_edesc = null;
+function init_desc_richtext_editors(){
+
+	var sn_toolbar = [
+		['style', ['bold', 'italic', 'underline', 'clear']],
+		['para', ['ul', 'ol']]
+		];
+	var sn_opts = {
+		toolbar: sn_toolbar,
+		height: 200				};
+
+	$('#shopify-description').summernote( sn_opts );
+	
+	// Set Shopify description callback to update eBay description
+	$('#shopify-description').on('summernote.change', apply_ebay_template );
+}
+
+
 $(document).ready(function(){
+	load_ebay_template();
+	
 	$('input#shopify-id').change(function(){
 		loadShopifyProduct($('input#shopify-id').val());
 	});
@@ -266,6 +336,7 @@ $(document).ready(function(){
 		loadEbayProduct($('input#ebay-sku').val());
 	});
 	
+	init_desc_richtext_editors();
 	check_ebay_auth();
 	check_shopify_auth();
 })

@@ -8,17 +8,20 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	
+	<link href="http://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.11/summernote-bs4.css" rel="stylesheet"> <!-- Summernote CSS -->
 
     <title>Shopify-eBay sync - SLIRP</title>
   </head>
   <body>
     <div class="container">
     	<div class="row my-5">
-			<div class="col-9">
+    		<div class="col"></div>
+			<div class="col-6 text-center">
 				<h1>Shopify sync</h1>
-			</div>
-			<div class="col-3">
-				<!-- Authentication status badges -->
+			</div>	
+			<!-- Authentication status badges -->
+    		<div class="col-3">
 				<div class="row my-0">
 					<div class="col-7">
 						<p class="mb-1 pb-2 mr-3 float-right">Shopify auth: </p>
@@ -33,7 +36,6 @@
 						
 					</div>
 				</div>
-				
 				<div class="row my-0">
 					<div class="col-7">
 						<p class="mb-1 pb-2 mr-3 float-right">eBay auth: </p>
@@ -48,8 +50,7 @@
 						<a href="#" role="button" class="btn btn-danger text-center float-right px-2 py-1 btn-sm" id="ebay-auth-status-fail" style="min-width: 8em;"><strong>Fail</strong> <small><br>(click to resolve)</small></a>
 					</div>
 				</div>
-
-			</div>
+			</div>	
 		</div>
 		<form>
 			<!-- Item IDs -->
@@ -81,6 +82,22 @@
 					</div>
 				</div>
 			</div>
+			
+			<!-- eBay state toggle -->
+<!-- 
+				<div class="row">
+				<div class="col-sm-7"></div>
+				<div class="col-sm-5">
+				<ul class="nav nav-tabs mb-2" id="myTab" role="tablist">
+					<li class="nav-item">
+						<a class="nav-link active" id="existing-tab" data-toggle="tab" href="#ebay-existing" role="tab" aria-controls="home" aria-selected="true">Existing</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" id="new-tab" data-toggle="tab" href="#ebay-new" role="tab" aria-controls="profile" aria-selected="false">New</a>
+					</li>			
+				</div>
+			</div>
+ -->
 				
 			<!-- Item titles -->
 			<div class="row">
@@ -135,7 +152,7 @@
 					<div class="form-group row">
 						<label for="ebay-description" class="col-2 col-form-label">Description</label> 
 						<div class="col-10">
-					  		<textarea id="ebay-description" name="ebay-description" type="textarea" rows="8" class="form-control ebay-product-property"></textarea>
+								<iframe id="ebay-description-iframe" style="width:100%;height:300px"></iframe>
 						</div>
 				  	</div>
 				</div>
@@ -238,11 +255,13 @@
 		</form>
 	</div>
 
-    <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="js/slirp-shopify.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/3.0.1/mustache.min.js"></script>
+    
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.11/summernote-bs4.js"></script>
   </body>
 </html>
