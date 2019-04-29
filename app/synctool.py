@@ -183,7 +183,8 @@ def test_ebay_api_call():
 		logger.debug('User access token expired, refreshing it...')
 		new_auth = refresh_access_token( session['refresh_token'] )
 		
-		return redirect('/api/test-ebay-call')
+		# Return tokens in JSON so that we can grab them for dev use
+		return jsonify([session['access_token'], session['access_token_expiry'], session['refresh_token']])
 	else:
 		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing: {}'.format(EBAY_OAUTH_CONSENT_URL))
 		return redirect(EBAY_OAUTH_CONSENT_URL)
