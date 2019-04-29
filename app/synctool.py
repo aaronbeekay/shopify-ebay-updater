@@ -4,8 +4,61 @@ from flask import Flask, render_template, request, abort, send_from_directory, s
 import os
 import requests
 import datetime
-import glitchlab_shopify
 from flask_cors import CORS
+
+"""Flask app setup"""
+app = Flask(__name__)
+CORS(app)
+
+"""Pick up data from env vars"""
+if os.path.exists('.env'):
+	from dotenv import load_dotenv
+	load_dotenv()
+	
+app.config['STATIC_FILE_DIR'] 			= os.environ.get('STATIC_FILE_DIR', 
+											 '/static'			)
+app.config['APP_SECRET_KEY'] 				= os.environ.get('APP_SECRET_KEY',	# for encrypting sesh
+											 None 				)
+app.config['EBAY_OAUTH_CLIENT_ID']		= os.environ.get('EBAY_OAUTH_CLIENT_ID',
+											 None 				)
+app.config['EBAY_OAUTH_CLIENT_SECRET']	= os.environ.get('EBAY_OAUTH_CLIENT_SECRET',
+											 None				)
+app.config['EBAY_OAUTH_TOKEN_ENDPOINT'] = os.environ.get('EBAY_OAUTH_TOKEN_ENDPOINT',
+											 'https://api.ebay.com/identity/v1/oauth2/token' )	# this is the prod URL
+app.config['EBAY_APP_RUNAME'] 			= os.environ.get('EBAY_APP_RUNAME',
+											 None )
+app.config['EBAY_SCOPES'] 				= os.environ.get('EBAY_SCOPES',
+											'https://api.ebay.com/oauth/api_scope ' 						+
+											'https://api.ebay.com/oauth/api_scope/sell.inventory ' 			+
+											'https://api.ebay.com/oauth/api_scope/sell.account.readonly' )
+app.config['EBAY_OAUTH_CONSENT_URL'] 	= os.environ.get('EBAY_OAUTH_CONSENT_URL',
+											 'https://auth.ebay.com/oauth2/authorize?' 						+
+											 	'client_id={}'.format(app.config['EBAY_OAUTH_CLIENT_ID']) 	+
+											 	'&response_type=code' 										+
+											 	'&redirect_uri={}'.format(app.config['EBAY_APP_RUNAME']) 	+
+											 	'&scope={}'.format(app.config['EBAY_SCOPES']) ) # also the prod URL
+app.config['SHOPIFY_API_KEY'] 			= os.environ.get('SHOPIFY_API_KEY',
+											 None )
+app.config['SHOPIFY_API_PW'] 			= os.environ.get('SHOPIFY_API_PW',
+											 None )
+app.config['SHOPIFY_STORE_DOMAIN'] 		= os.environ.get('SHOPIFY_STORE_DOMAIN',
+											 'glitchlab.myshopify.com' )
+											 
+"""Constants"""
+app.config['EBAY_INVENTORYITEM_URL'] = 'https://api.ebay.com/sell/inventory/v1/inventory_item/{}'
+app.config['constants'] = {	
+	'EBAY_ERROR_SKU_NOT_FOUND': 		25702,
+	'EBAY_ERROR_INVALID_ACCESS_TOKEN': 	1001,
+	'EBAY_ERROR_MISSING_ACCESS_TOKEN': 	1002,
+	'EBAY_ERROR_ACCESS_DENIED': 		1100
+	}
+
+
+# Set up app secret key										 
+app.secret_key = app.config['APP_SECRET_KEY']
+
+# need to do this after setting up app for the time being because glitchlab_shopify.py relies on global object `app`
+import glitchlab_shopify
 
 """Debug URLLib requests"""
 if 'DEBUG_URLLIB_REQS' in os.environ and int(os.environ['DEBUG_URLLIB_REQS']) is 1:
@@ -17,44 +70,7 @@ if 'DEBUG_URLLIB_REQS' in os.environ and int(os.environ['DEBUG_URLLIB_REQS']) is
 	requests_log.setLevel(logging.DEBUG)
 	requests_log.propagate = True
 
-"""Pick up data from env vars"""
-if os.path.exists('.env'):
-	from dotenv import load_dotenv
-	load_dotenv()
-	
-STATIC_FILE_DIR 			= os.environ.get('STATIC_FILE_DIR', 
-											 '/static'			)
-APP_SECRET_KEY 				= os.environ.get('APP_SECRET_KEY',									# for encrypting sesh
-											 None 				)
-EBAY_OAUTH_CLIENT_ID 		= os.environ.get('EBAY_OAUTH_CLIENT_ID',
-											 None 				)
-EBAY_OAUTH_CLIENT_SECRET 	= os.environ.get('EBAY_OAUTH_CLIENT_SECRET',
-											 None				)
-EBAY_OAUTH_TOKEN_ENDPOINT 	= os.environ.get('EBAY_OAUTH_TOKEN_ENDPOINT',
-											 'https://api.ebay.com/identity/v1/oauth2/token' )	# this is the prod URL
-EBAY_APP_RUNAME 			= os.environ.get('EBAY_APP_RUNAME',
-											 None )
-EBAY_SCOPES 				= os.environ.get('EBAY_SCOPES',
-											'https://api.ebay.com/oauth/api_scope ' +
-											'https://api.ebay.com/oauth/api_scope/sell.inventory ' +
-											'https://api.ebay.com/oauth/api_scope/sell.account.readonly' )
-EBAY_OAUTH_CONSENT_URL 		= os.environ.get('EBAY_OAUTH_CONSENT_URL',
-											 'https://auth.ebay.com/oauth2/authorize?' +
-											 	'client_id={}'.format(EBAY_OAUTH_CLIENT_ID) +
-											 	'&response_type=code' +
-											 	'&redirect_uri={}'.format(EBAY_APP_RUNAME) +
-											 	'&scope={}'.format(EBAY_SCOPES) ) 		# also the prod URL
-SHOPIFY_API_KEY 			= os.environ.get('SHOPIFY_API_KEY',
-											 None )
-SHOPIFY_API_PW 				= os.environ.get('SHOPIFY_API_PW',
-											 None )
-SHOPIFY_STORE_DOMAIN 		= os.environ.get('SHOPIFY_STORE_DOMAIN',
-											 'glitchlab.myshopify.com' )
-											
-"""Flask app setup"""
-app = Flask(__name__)
-app.secret_key = APP_SECRET_KEY
-CORS(app)
+
 
 """Logging setup"""
 # create logger
@@ -89,8 +105,8 @@ if __name__ != '__main__':	# only do this when running w gunicorn
 def test_shopify_auth():
 	"""Do a test call to the Shopify API to make sure we have good credentials"""
 	response = requests.get(
-		'https://' + SHOPIFY_STORE_DOMAIN + '/admin/api/2019-04/products/count.json',
-		auth=(SHOPIFY_API_KEY,SHOPIFY_API_PW)
+		'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/count.json',
+		auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW'])
 	)
 	
 	try:
@@ -109,7 +125,7 @@ def test_ebay_auth():
 	"""Do a test call to the eBay API to make sure we have good credentials"""
 	
 	if 'access_token' not in session:
-		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing', 'ebay_consent_url': EBAY_OAUTH_CONSENT_URL})
+		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing', 'ebay_consent_url': app.config['EBAY_OAUTH_CONSENT_URL']})
 		
 	if session.get('access_token_expiry') < datetime.datetime.utcnow():
 	
@@ -137,17 +153,17 @@ def test_ebay_auth():
 @app.route('/api/shopify/product')
 def get_shopify_product():
 	if 'id' in request.args:
-		url = 'https://' + SHOPIFY_STORE_DOMAIN + '/admin/api/2019-04/products/' + request.args['id'] + '.json'
+		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + request.args['id'] + '.json'
 		logger.debug("Trying to GET the Shopify product {} by hitting {}".format(request.args['id'], url))
-		logger.debug("Using auth: {}:{}".format(SHOPIFY_API_KEY,SHOPIFY_API_PW))
+		logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
 		response = requests.get(
 			url,
-			auth=(SHOPIFY_API_KEY,SHOPIFY_API_PW)
+			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW'])
 		)
 		try:
 			return jsonify(response.json())
 		except json.JSONDecodeError:
-			logger.debug('Shopify said: ' + response.text)
+			logger.error('Shopify said something that is not JSON: ' + response.text)
 			return 'Shopify said...' + response.text
 	else:
 		return "You gotta supply a Shopify product ID in the 'id' GET param"
@@ -220,8 +236,8 @@ def test_ebay_api_call():
 		# Return tokens in JSON so that we can grab them for dev use
 		return jsonify({'access_token': session['access_token'], 'access_token_expiry': session['access_token_expiry'], 'refresh_token': session['refresh_token']})
 	else:
-		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing: {}'.format(EBAY_OAUTH_CONSENT_URL))
-		return redirect(EBAY_OAUTH_CONSENT_URL)
+		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing: {}'.format(app.config['EBAY_OAUTH_CONSENT_URL']))
+		return redirect(app.config['EBAY_OAUTH_CONSENT_URL'])
 		
 @app.route('/api/ebay/product', methods=['GET','POST'])
 def ebay_product_endpoint():
@@ -279,12 +295,12 @@ def get_access_token(auth_code):
 	body = {
 		'grant_type': 'authorization_code',
 		'code': auth_code,
-		'redirect_uri': EBAY_APP_RUNAME
+		'redirect_uri': app.config['EBAY_APP_RUNAME']
 	}
 	response = requests.post(
-		EBAY_OAUTH_TOKEN_ENDPOINT,
+		app.config['EBAY_OAUTH_TOKEN_ENDPOINT'],
 		data=body,
-		auth=(EBAY_OAUTH_CLIENT_ID,EBAY_OAUTH_CLIENT_SECRET)
+		auth=(app.config['EBAY_OAUTH_CLIENT_ID'],app.config['EBAY_OAUTH_CLIENT_SECRET'])
 	)
 	authDict = response.json()
 	
@@ -305,12 +321,12 @@ def refresh_access_token(refresh_token):
 	body = {
 		'grant_type': 'refresh_token',
 		'refresh_token': refresh_token,
-		'scope': EBAY_SCOPES
+		'scope': app.config['EBAY_SCOPES']
 	}
 	response = requests.post(
-		EBAY_OAUTH_TOKEN_ENDPOINT,
+		app.config['EBAY_OAUTH_TOKEN_ENDPOINT'],
 		data=body,
-		auth=(EBAY_OAUTH_CLIENT_ID,EBAY_OAUTH_CLIENT_SECRET)
+		auth=(app.config['EBAY_OAUTH_CLIENT_ID'],app.config['EBAY_OAUTH_CLIENT_SECRET'])
 	)
 	authDict = response.json()
 	

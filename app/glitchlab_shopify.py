@@ -4,13 +4,9 @@ import logging
 import pystache
 import requests
 import json
+from flask import session, request
+from flask import current_app as app
 
-"""Constants"""
-EBAY_INVENTORYITEM_URL = 'https://api.ebay.com/sell/inventory/v1/inventory_item/{}'
-EBAY_ERROR_SKU_NOT_FOUND = 25702
-EBAY_ERROR_INVALID_ACCESS_TOKEN = 1001
-EBAY_ERROR_MISSING_ACCESS_TOKEN = 1002
-EBAY_ERROR_ACCESS_DENIED = 1100
 
 """Logging setup"""
 logger = logging.getLogger('glitchlab_shopify.slirp.aaronbeekay')
@@ -58,14 +54,18 @@ def render_product_template(template, product):
 				}
 	
 	return pystache.render(t, fields)
-		
+	
+# def get_shopify_product(product_id):
+# 	"""add me"""
 
 def set_shopify_attributes(product_id, attributes):
 	"""Set Shopify product attributes from a dict."""
 	raise NotImplementedError("sorry")
 	
-def set_ebay_attributes(auth_token, product_sku, attributes):
+def set_ebay_attributes(product_sku, attributes):
 	"""Set eBay inventory item attributes from a dict."""
+	
+	auth_token = session['access_token']
 	
 	# 1. Fetch the existing inventory item (eBay will overwrite all fields when we update, so merge locally)
 	try:
@@ -83,7 +83,7 @@ def set_ebay_attributes(auth_token, product_sku, attributes):
 		logger.error('Attributes attempting to merge in: {}'.format(pprint(attributes)) )
 	
 	# 3. Call createOrReplaceInventoryItem
-	url = EBAY_INVENTORYITEM_URL.format( product_sku )
+	url = app.config['EBAY_INVENTORYITEM_URL'].format( product_sku )
 	headers = {
 		'Authorization': 'Bearer {}'.format( auth_token ),
 		'Content-Language': 'en-US'
@@ -107,9 +107,9 @@ def set_ebay_attributes(auth_token, product_sku, attributes):
 		for e in j['errors']:
 			if e['errorId'] == EBAY_ERROR_SKU_NOT_FOUND:
 				raise ItemNotFoundError(e['message'])
-			elif (	e['errorId'] == EBAY_ERROR_INVALID_ACCESS_TOKEN 	\
-				or 	e['errorId'] == EBAY_ERROR_MISSING_ACCESS_TOKEN 	\
-				or 	e['errorId'] == EBAY_ERROR_ACCESS_DENIED		    ):
+			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
 				raise AuthenticationError(e['message'])
 				
 	return j
@@ -123,7 +123,7 @@ def get_ebay_product(auth_token, product_sku):
 	
 	Raises ItemNotFoundError if item doesn't exist.
 	"""
-	url = EBAY_INVENTORYITEM_URL.format(product_sku)
+	url = app.config['EBAY_INVENTORYITEM_URL'].format(product_sku)
 	auth = {'Authorization': 'Bearer {}'.format(auth_token)}
 	logger.debug('Trying to fetch eBay SKU {}...'.format(product_sku))
 	response = requests.get( url, headers=auth )
@@ -137,27 +137,26 @@ def get_ebay_product(auth_token, product_sku):
 		for e in j['errors']:
 			if e['errorId'] == EBAY_ERROR_SKU_NOT_FOUND:
 				raise ItemNotFoundError(e['message'])
-			elif (	e['errorId'] == EBAY_ERROR_INVALID_ACCESS_TOKEN 	\
-				or 	e['errorId'] == EBAY_ERROR_MISSING_ACCESS_TOKEN 	\
-				or 	e['errorId'] == EBAY_ERROR_ACCESS_DENIED		    ):
+			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
 				raise AuthenticationError(e['message'])
 				
 	return j
 				
 	
 def shopify_authenticate(api_key=None, api_password=None):
-	"""Authenticate with the Shopify API given a certain API key and password. If none given, check the env
-		variables SHOPIFY_API_KEY and SHOPIFY_API_PASSWORD.""" 
+	"""Authenticate with the Shopify API given a certain API key and password. If none given, check the app config""" 
 	
 	if api_key is None:
 		try:
-			api_key = os.environ['SHOPIFY_API_KEY']
+			api_key = app.config['SHOPIFY_API_KEY']
 		except KeyError:
 			raise RuntimeError("Didn't find a Shopify API key in the SHOPIFY_API_KEY environment variable")
 		
 	if api_password is None:
 		try:
-			api_password = os.environ['SHOPIFY_API_PASSWORD']
+			api_password = app.config['SHOPIFY_API_PASSWORD']
 		except KeyError:
 			raise RuntimeError("Didn't find a Shopify API password in the SHOPIFY_API_PASSWORD environment variable")
 
