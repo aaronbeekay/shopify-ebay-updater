@@ -58,7 +58,7 @@ function loadEbayProduct( ebay_sku ){
 	ebay_product_fields_enabled(false);
 	$.ajax({
 		type: "GET",
-		url: '/api/ebay/product?id=' + ebay_sku,
+		url: '/api/ebay/product?sku=' + ebay_sku,
 		success: function(data){ populateEbayProductInfo(data) }
 	});
 }
