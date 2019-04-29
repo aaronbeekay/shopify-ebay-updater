@@ -177,7 +177,9 @@ def test_ebay_api_call():
 		response = requests.get(
 			'https://api.ebay.com/sell/inventory/v1/inventory_item',
 			headers={'Authorization': 'Bearer {}'.format(session['access_token'])})
-		return json.dumps(response.json())
+			
+		# Return tokens in JSON so that we can grab them for dev use
+		return jsonify([session['access_token'], session['access_token_expiry'], session['refresh_token']])
 	elif 'refresh_token' in session:
 		# access token is expired, go refresh it
 		logger.debug('User access token expired, refreshing it...')
