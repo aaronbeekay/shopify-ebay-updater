@@ -176,12 +176,30 @@ def set_session_keys(methods=['GET','POST']):
 	
 	if len(request.form) > 0:
 		for k,v in request.form.items():
-			session[k] = v
+			if k == 'access_token_expiry':
+				logger.debug('setting datetime version of key {}'.format(k))
+				session[k] = datetime.datetime.fromisoformat(v)			
+			else:
+				session[k] = v
 		return jsonify({'changed': 'yes', 'session': dict(session) }  )
 	if len(request.args) > 0:
 		for k,v in request.args.items():
-			session[k] = v
+			if k == 'access_token_expiry':
+				logger.debug('setting datetime version of key {}'.format(k))
+				session[k] = datetime.datetime.fromisoformat(v)			
+			else:
+				session[k] = v
 		return jsonify( {'changed': 'yes', 'session': dict(session) }  )
+	try:
+		for k,v in request.json():
+			if k == 'access_token_expiry':
+				logger.debug('setting datetime version of key {}'.format(k))
+				session[k] = datetime.datetime.fromisoformat(v)			
+			else:
+				session[k] = v
+		return jsonify( {'changed': 'yes', 'session': dict(session) }  )
+	except json.JSONDecodeError:
+		return jsonify( {'changed': 'no', 'session': dict(session) } )
 	else:
 		return jsonify( {'changed': 'no', 'session': dict(session) } )
 		
