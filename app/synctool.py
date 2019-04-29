@@ -84,12 +84,7 @@ if __name__ != '__main__':	# only do this when running w gunicorn
 		
 
 """ Endpoints """
-@app.route('/api/hello-world', methods=['GET'])
-def create_system():
-	logger.debug('Got a GET request to /api/hello-world')
-	
-	return("Hello from Flask!")
-	
+
 @app.route('/api/shopify/test-auth')
 def test_shopify_auth():
 	"""Do a test call to the Shopify API to make sure we have good credentials"""
@@ -171,19 +166,59 @@ def handle_ebay_callback():
 	else:
 		logger.error("Didn't get a code back from eBay oauth callback. Possibly user declined. eBay says: " + json.dumps(request.json()))
 		
+@app.route('/api/dev/session-keys')
+def set_session_keys(methods=['GET','POST']):
+	"""
+	Debug/dev use: take any parameter we get in a POSTed form, and blindly set the corresponding session key.
+	
+	Probably ought to be disabled unless somebody actually thinks about what security implications this has.
+	"""
+	
+	if len(request.form) > 0:
+		for k,v in request.form.items():
+			if k == 'access_token_expiry':
+				logger.debug('setting datetime version of key {}'.format(k))
+				session[k] = datetime.datetime.fromisoformat(v)			
+			else:
+				session[k] = v
+		return jsonify({'changed': 'yes', 'session': dict(session) }  )
+	if len(request.args) > 0:
+		for k,v in request.args.items():
+			if k == 'access_token_expiry':
+				logger.debug('setting datetime version of key {}'.format(k))
+				session[k] = datetime.datetime.fromisoformat(v)			
+			else:
+				session[k] = v
+		return jsonify( {'changed': 'yes', 'session': dict(session) }  )
+	try:
+		for k,v in request.json():
+			if k == 'access_token_expiry':
+				logger.debug('setting datetime version of key {}'.format(k))
+				session[k] = datetime.datetime.fromisoformat(v)			
+			else:
+				session[k] = v
+		return jsonify( {'changed': 'yes', 'session': dict(session) }  )
+	except json.JSONDecodeError:
+		return jsonify( {'changed': 'no', 'session': dict(session) } )
+	else:
+		return jsonify( {'changed': 'no', 'session': dict(session) } )
+		
 @app.route('/api/test-ebay-call')
 def test_ebay_api_call():
 	if 'access_token' in session and datetime.datetime.utcnow() < session.get('access_token_expiry'):
 		response = requests.get(
 			'https://api.ebay.com/sell/inventory/v1/inventory_item',
 			headers={'Authorization': 'Bearer {}'.format(session['access_token'])})
-		return json.dumps(response.json())
+			
+		# Return tokens in JSON so that we can grab them for dev use
+		return jsonify({'access_token': session['access_token'], 'access_token_expiry': session['access_token_expiry'], 'refresh_token': session['refresh_token']})
 	elif 'refresh_token' in session:
 		# access token is expired, go refresh it
 		logger.debug('User access token expired, refreshing it...')
 		new_auth = refresh_access_token( session['refresh_token'] )
 		
-		return redirect('/api/test-ebay-call')
+		# Return tokens in JSON so that we can grab them for dev use
+		return jsonify({'access_token': session['access_token'], 'access_token_expiry': session['access_token_expiry'], 'refresh_token': session['refresh_token']})
 	else:
 		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing: {}'.format(EBAY_OAUTH_CONSENT_URL))
 		return redirect(EBAY_OAUTH_CONSENT_URL)
