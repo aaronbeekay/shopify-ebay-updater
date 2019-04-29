@@ -43,10 +43,13 @@ function populateShopifyProductInfo(product){
 	$('input#shopify-weight').val('??');
 	$('input#shopify-condition').val('??');
 	
+	autoresize_descriptions();
+	
 	shopify_product_fields_enabled(true);
 	
 	// Update the eBay fields
 	update_ebay_fields_from_shopify();
+	autoresize_descriptions();
 }
 
 /* Request a single eBay product from the backend by its SKU, then pass it to populateEbayProductInfo() */
@@ -81,6 +84,8 @@ function populateEbayProductInfo(product){
 	}
 	
 	$('input#ebay-condition').val(ep.condition);
+	
+	autoresize_descriptions();
 	
 	ebay_product_fields_enabled(true);
 }
@@ -258,6 +263,7 @@ function apply_ebay_template(){
 					item_name: stitle,
 					item_description: sdesc			});
 	$('#ebay-description-iframe').attr('srcdoc', edesc);
+	autoresize_descriptions();
 }
 
 function set_ebay_login_status(state){
@@ -320,8 +326,24 @@ function init_desc_richtext_editors(){
 
 	$('#shopify-description').summernote( sn_opts );
 	
-	// Set Shopify description callback to update eBay description
-	$('#shopify-description').on('summernote.change', apply_ebay_template );
+	
+	$('#shopify-description').on('summernote.change',  );
+	
+	// Set textarea and iframe height to match content height when edits get made
+	$('#shopify-description').on('summernote.change', function(){
+		// Update eBay desc with rendered template
+		apply_ebay_template();
+		
+		autoresize_descriptions();
+	} );
+}
+
+/* Update the size of the description boxes (textarea and iframe) to match their contents */
+function autoresize_descriptions(){
+	$('#shopify-description').height( $("#shopify-description")[0].scrollHeight + 'px' );
+	$('#ebay-description-iframe').height( 
+		$("#ebay-description-iframe")[0].contentWindow.document.body.offsetHeight + 10 + 'px' 
+		);
 }
 
 
@@ -334,6 +356,21 @@ $(document).ready(function(){
 	
 	$('input#ebay-sku').change(function(){
 		loadEbayProduct($('input#ebay-sku').val());
+	});
+	
+	// Set radio button appearance based on state
+	// 	TODO: This can probably be done trivially in CSS
+	$('.ebay-toggle').click( function(){
+		$(this).addClass('btn-secondary');
+		$(this).removeClass('btn-outline-secondary');
+		$(this).addClass('active');
+		$(this).attr('checked', true);
+		
+		// Remove btn-secondary class from other labels so they look un-selected
+		$(this).siblings().removeClass('btn-secondary');
+		$(this).siblings().addClass('btn-outline-secondary');
+		$(this).siblings().removeClass('active');
+		$(this).siblings().removeAttr('checked')
 	});
 	
 	init_desc_richtext_editors();
