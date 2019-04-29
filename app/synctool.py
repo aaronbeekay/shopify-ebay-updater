@@ -8,7 +8,7 @@ import glitchlab_shopify
 from flask_cors import CORS
 
 """Debug URLLib requests"""
-if os.environ.get('DEBUG_URLLIB_REQS') is True:
+if 'DEBUG_URLLIB_REQS' in os.environ and int(os.environ['DEBUG_URLLIB_REQS']) is 1:
 	from http.client import HTTPConnection
 	HTTPConnection.debuglevel = 1
 	logging.basicConfig()
@@ -166,8 +166,8 @@ def handle_ebay_callback():
 	else:
 		logger.error("Didn't get a code back from eBay oauth callback. Possibly user declined. eBay says: " + json.dumps(request.json()))
 		
-@app.route('/api/dev/session-keys')
-def set_session_keys(methods=['GET','POST']):
+@app.route('/api/dev/session-keys', methods=['GET','POST'])
+def set_session_keys():
 	"""
 	Debug/dev use: take any parameter we get in a POSTed form, and blindly set the corresponding session key.
 	
@@ -223,18 +223,35 @@ def test_ebay_api_call():
 		logger.debug('User access token or user refresh token not present, redirecting to eBay consent thing: {}'.format(EBAY_OAUTH_CONSENT_URL))
 		return redirect(EBAY_OAUTH_CONSENT_URL)
 		
-@app.route('/api/ebay/product', methods=['GET'])
-def get_ebay_product():
-	if 'id' not in request.args:
-		logger.info("This request doesn't have an id attached to it")
-		return 'Try again with an "id" parameter'
-		
+@app.route('/api/ebay/product', methods=['GET','POST'])
+def ebay_product_endpoint():
+	"""
+	Get an eBay inventory item by its SKU (GET), or update an existing item with new attributes (POST).
+	"""
+	if request.method == 'GET':
+		return get_ebay_product( request.args.get('sku') )
+	elif request.method == 'POST':
+		try:
+			return jsonify( glitchlab_shopify.set_ebay_attributes( 
+				session['access_token'],
+				request.args.get('sku'),
+				request.json				))
+		except json.JSONDecodeError as e:
+			logger.info('Bad request body sent to /api/ebay/product endpoint. Error: {}'.format(e))
+			logger.debug('Request body in question was {}'.format(request.text))
+			
+def get_ebay_product(sku):
+	"""Retrieve an item"""
+	if sku is None:
+		logger.info("This request doesn't have a sku attached to it")
+		return 'Try again with a "sku" parameter'
+	
 	if 'access_token' not in session or session.get('access_token_expiry') < datetime.datetime.utcnow():
 		# The client side will need to handle logging back in
 		return jsonify({'error': 'ebay_auth_invalid'})
-	
+
 	try:
-		p = glitchlab_shopify.get_ebay_product( session['access_token'], request.args['id'] )
+		p = glitchlab_shopify.get_ebay_product( session['access_token'], sku )
 		return jsonify(p)
 	except glitchlab_shopify.AuthenticationError as e:
 		return jsonify({'error': 'ebay_auth_invalid', 'message': e.message})
