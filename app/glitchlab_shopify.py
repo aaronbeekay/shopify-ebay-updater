@@ -13,7 +13,7 @@ logger = logging.getLogger('glitchlab_shopify.slirp.aaronbeekay')
 logger.setLevel(logging.DEBUG)
 # Create console handler to dump messages to console
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 # Create formatter and add it to the console handler - omit time because it's handled elsewhere
 formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
@@ -21,28 +21,28 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 def merge(a, b, path=None, update=True):
-    """
-    Merges b into a, recursing through nested levels to only update changed keys.
-    
-    http://stackoverflow.com/questions/7204805/python-dictionaries-of-dictionaries-merge"""
+	"""
+	Merges b into a, recursing through nested levels to only update changed keys.
+	
+	http://stackoverflow.com/questions/7204805/python-dictionaries-of-dictionaries-merge"""
   
-    if path is None: path = []
-    for key in b:
-        if key in a:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                merge(a[key], b[key], path + [str(key)])
-            elif a[key] == b[key]:
-                pass # same leaf value
-            elif isinstance(a[key], list) and isinstance(b[key], list):
-                for idx, val in enumerate(b[key]):
-                    a[key][idx] = merge(a[key][idx], b[key][idx], path + [str(key), str(idx)], update=update)
-            elif update:
-                a[key] = b[key]
-            else:
-                raise RuntimeError('Dictionary merge conflict at %s' % '.'.join(path + [str(key)]))
-        else:
-            a[key] = b[key]
-    return a
+	if path is None: path = []
+	for key in b:
+		if key in a:
+			if isinstance(a[key], dict) and isinstance(b[key], dict):
+				merge(a[key], b[key], path + [str(key)])
+			elif a[key] == b[key]:
+				pass # same leaf value
+			elif isinstance(a[key], list) and isinstance(b[key], list):
+				for idx, val in enumerate(b[key]):
+					a[key][idx] = merge(a[key][idx], b[key][idx], path + [str(key), str(idx)], update=update)
+			elif update:
+				a[key] = b[key]
+			else:
+				raise RuntimeError('Dictionary merge conflict at %s' % '.'.join(path + [str(key)]))
+		else:
+			a[key] = b[key]
+	return a
 
 def render_product_template(template, product):
 	"""make the HTML description for a product. template is a file path"""
@@ -55,8 +55,35 @@ def render_product_template(template, product):
 	
 	return pystache.render(t, fields)
 	
-# def get_shopify_product(product_id):
-# 	"""add me"""
+def get_shopify_product(product_id):
+	"""
+	Fetch a single Shopify product by its ID, `product_id`.
+	Also retrieve the item's metafields, and merge the dict of metafields into the product dict returned from the Shopify product endpoint.
+
+	Returns a dict if successful. Raises AuthenticationError or ItemNotFoundError, or returns None, if not.
+	"""
+
+	# Hit the Product endpoint first
+	#   TODO: Why the fuck am I doing this manually when I have the Shopify API right here?
+	url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + product_id + '.json'
+	logger.debug("Trying to GET the Shopify product {} by hitting {}".format(product_id, url))
+	logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
+	response = requests.get(
+		url,
+		auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW'])
+	)
+	try:
+		p = response.json()
+	except json.JSONDecodeError:
+		logger.error('Shopify said something that is not JSON: ' + response.text)
+		return 'Shopify said...' + response.text
+		
+	# TODO: see if the response is a valid product
+	
+	# Retrieve metafields and add them in
+	p['metafields'] = get_metafields( product_id )
+	
+	return p
 
 def set_shopify_attributes(product_id, attributes):
 	"""Set Shopify product attributes from a dict."""
@@ -135,7 +162,7 @@ def get_ebay_product(auth_token, product_sku):
 		
 	if 'errors' in j:
 		for e in j['errors']:
-			if e['errorId'] == EBAY_ERROR_SKU_NOT_FOUND:
+			if e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']:
 				raise ItemNotFoundError(e['message'])
 			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
@@ -144,38 +171,78 @@ def get_ebay_product(auth_token, product_sku):
 				
 	return j
 				
-	
 def shopify_authenticate(api_key=None, api_password=None):
 	"""Authenticate with the Shopify API given a certain API key and password. If none given, check the app config""" 
 	
 	if api_key is None:
 		try:
 			api_key = app.config['SHOPIFY_API_KEY']
+			logger.debug('Setting shopify API key from app.config: {}'.format(api_key))
 		except KeyError:
 			raise RuntimeError("Didn't find a Shopify API key in the SHOPIFY_API_KEY environment variable")
 		
 	if api_password is None:
 		try:
-			api_password = app.config['SHOPIFY_API_PASSWORD']
+			api_password = app.config['SHOPIFY_API_PW']
+			logger.debug('Setting shopify API PW from app.config: {}'.format(api_password))
 		except KeyError:
-			raise RuntimeError("Didn't find a Shopify API password in the SHOPIFY_API_PASSWORD environment variable")
+			raise RuntimeError("Didn't find a Shopify API password in the SHOPIFY_API_PW environment variable")
 
-	shop_url = "https://%s:%s@glitchlab.myshopify.com/admin" % (api_key, api_password)
+	shop_url = "https://{k}:{pw}@glitchlab.myshopify.com/admin".format(k=api_key, pw=api_password)
+	logger.debug('Setting shop url: {}'.format(shop_url))
 	shopify.ShopifyResource.set_site(shop_url)
 	
-def get_metafields(product):
-	"""Return a dict of metafields and values for a Shopify product"""
-	d = {}
-	for m in product.metafields():
-		k = m.key
-		
-		if m.value_type == 'integer':
-			v = int(m.value)
-		else:
-			v = m.value
-		
-		d[k] = v
-	return d
+# def get_metafields(id):
+# 	"""Return a dict of metafields and values for a Shopify product"""
+# 	shopify_authenticate()
+# 	product = shopify.Product.find(id)
+# 	
+# 	d = {}
+# 	#import pdb;pdb.set_trace()
+# 	for m in product.metafields():
+# 		k = m.key
+# 		
+# 		if m.value_type == 'integer':
+# 			v = int(m.value)
+# 		else:
+# 			v = m.value
+# 		
+# 		d[k] = v
+# 	return d
+
+def get_metafields(product_id, with_ids=False):
+	"""
+	Get product metafields without using shopify api
+	
+	If `with_ids` is True, will return a dict of {key: {'id': id, 'value': value, 'value_type': value_type}}.
+	If `with_ids` is False, will return a dict of {key: value}.
+	
+	value_type is one of ("string", "json_string", "integer"), per Shopify.
+	"""
+	
+	#   TODO: Why the fuck am I doing this manually when I have the Shopify API right here?
+	url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + product_id + '/metafields.json'
+	logger.debug("Trying to GET the Shopify product metafields {} by hitting {}".format(product_id, url))
+	logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
+	response = requests.get(
+		url,
+		auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW'])
+	)
+	try:
+		ms = response.json()
+	except json.JSONDecodeError:
+		logger.error('Shopify said something that is not JSON: ' + response.text)
+		return 'Shopify said...' + response.text
+	
+	# Construct a more sensible array of metafields (key => value)
+	m = {}
+	if with_ids is False:
+		for f in ms['metafields']:
+			m[f['key']] = f['value']
+	elif with_ids is True:
+		for f in ms['metafields']:
+			m[f['key']] = {'id': f['id'], 'value': f['value'], 'value_type': f['value_type']}		
+	return m
 	
 def set_metafields(product, metafields):
 	"""Given a dict of metafield keys and values, set a product metafield for each key. If a metafield exists
@@ -199,6 +266,79 @@ def set_metafields(product, metafields):
 			raise RuntimeError(message)
 		else:
 			logger.info('Successfully updated product id {} with metafield {} = {}'.format(product.id, k, v))
+			
+def set_metafield(product_id, key, value):
+	"""
+	Create or update a single metafield for a product with ID `product_id`.
+	
+	set_metafield() will download the existing metafields for the product. If the metafield with key `key` exists, 
+		its value will be updated to be `value`. If not, it will be created.
+	
+	Doesn't return anything.
+	"""
+
+	logger.debug('Going to set metafield with key={} to {} for product {}.'.format(key, value, product_id))
+	existing = get_metafields(product_id, with_ids=True)
+	
+	if key in existing:
+		logger.debug('Looks like {k} already exists for product {pid} (currently set to {v}). Will update.'.format(k=key,pid=product_id,v=existing[key]['value']))
+		# Update that particular metafield
+		metafield_id = existing[key]['id']
+		update_data = {"metafield": {"id": metafield_id, "key": key, "value": value}}
+		
+		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + 	\
+				product_id + '/metafields/' + metafield_id + '.json'
+		response = requests.put(
+			url,
+			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
+			json=update_data
+			)
+	else:
+		# Make a new metafield
+		type_string = guess_metafield_type(value)
+		new_data = {"metafield": {"key": key, "value": value, "value_type": type_string, "namespace": "global"}}
+		
+		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + 	\
+				product_id + '/metafields.json'
+		logger.debug('OK, making a new metafield for product {}: {}'.format(product_id, json.dumps(new_data)))
+		response = requests.post(
+			url,
+			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
+			json=new_data
+			)
+
+	if response.status_code >= 200 and response.status_code < 300: 
+		logger.debug('Got status in 200s back from Shopify, assuming metafield set OK.')
+		return	# assume all is well
+	else:
+		logger.warning('Got unexpected response from Shopify: {}'.format(response.text))
+		return response.text
+		
+
+def guess_metafield_type(value):
+	"""
+	Guess the correct type_string to use with a given metafield value.
+	
+	Returns one of ('string', 'json_string', 'integer').
+	"""
+	
+	# Pick one of ('string', 'json_string', 'integer') to set as the Shopify metafield type.
+	if isinstance(value, (dict, list)):
+		# If we have a collection input, dump it to a string and set the metafield to a JSON string.
+		type_string = 'json_string'
+	elif isinstance(value, str):
+		# If it's a string, check if it's valid JSON. If so, set JSON string. Otherwise, regular string.
+		try:
+			json.loads(value)
+			type_string = 'json_string'
+		except json.JSONDecodeError:
+			type_string = 'string'
+	elif isinstance(value, int):
+		type_string = 'integer'
+	else:
+		type_string = 'string'
+	
+	return type_string
 			
 """Error classes"""
 class Error(Exception):

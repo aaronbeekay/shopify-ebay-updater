@@ -13,35 +13,35 @@ CORS(app)
 """Pick up data from env vars"""
 if os.path.exists('.env'):
 	from dotenv import load_dotenv
-	load_dotenv()
+	load_dotenv(verbose=True)
 	
-app.config['STATIC_FILE_DIR'] 			= os.environ.get('STATIC_FILE_DIR', 
+app.config['STATIC_FILE_DIR'] 			= os.getenv('STATIC_FILE_DIR', 
 											 '/static'			)
-app.config['APP_SECRET_KEY'] 				= os.environ.get('APP_SECRET_KEY',	# for encrypting sesh
+app.config['APP_SECRET_KEY'] 				= os.getenv('APP_SECRET_KEY',	# for encrypting sesh
 											 None 				)
-app.config['EBAY_OAUTH_CLIENT_ID']		= os.environ.get('EBAY_OAUTH_CLIENT_ID',
+app.config['EBAY_OAUTH_CLIENT_ID']		= os.getenv('EBAY_OAUTH_CLIENT_ID',
 											 None 				)
-app.config['EBAY_OAUTH_CLIENT_SECRET']	= os.environ.get('EBAY_OAUTH_CLIENT_SECRET',
+app.config['EBAY_OAUTH_CLIENT_SECRET']	= os.getenv('EBAY_OAUTH_CLIENT_SECRET',
 											 None				)
-app.config['EBAY_OAUTH_TOKEN_ENDPOINT'] = os.environ.get('EBAY_OAUTH_TOKEN_ENDPOINT',
+app.config['EBAY_OAUTH_TOKEN_ENDPOINT'] = os.getenv('EBAY_OAUTH_TOKEN_ENDPOINT',
 											 'https://api.ebay.com/identity/v1/oauth2/token' )	# this is the prod URL
-app.config['EBAY_APP_RUNAME'] 			= os.environ.get('EBAY_APP_RUNAME',
+app.config['EBAY_APP_RUNAME'] 			= os.getenv('EBAY_APP_RUNAME',
 											 None )
-app.config['EBAY_SCOPES'] 				= os.environ.get('EBAY_SCOPES',
+app.config['EBAY_SCOPES'] 				= os.getenv('EBAY_SCOPES',
 											'https://api.ebay.com/oauth/api_scope ' 						+
 											'https://api.ebay.com/oauth/api_scope/sell.inventory ' 			+
 											'https://api.ebay.com/oauth/api_scope/sell.account.readonly' )
-app.config['EBAY_OAUTH_CONSENT_URL'] 	= os.environ.get('EBAY_OAUTH_CONSENT_URL',
+app.config['EBAY_OAUTH_CONSENT_URL'] 	= os.getenv('EBAY_OAUTH_CONSENT_URL',
 											 'https://auth.ebay.com/oauth2/authorize?' 						+
 											 	'client_id={}'.format(app.config['EBAY_OAUTH_CLIENT_ID']) 	+
 											 	'&response_type=code' 										+
 											 	'&redirect_uri={}'.format(app.config['EBAY_APP_RUNAME']) 	+
 											 	'&scope={}'.format(app.config['EBAY_SCOPES']) ) # also the prod URL
-app.config['SHOPIFY_API_KEY'] 			= os.environ.get('SHOPIFY_API_KEY',
+app.config['SHOPIFY_API_KEY'] 			= os.getenv('SHOPIFY_API_KEY',
 											 None )
-app.config['SHOPIFY_API_PW'] 			= os.environ.get('SHOPIFY_API_PW',
+app.config['SHOPIFY_API_PW'] 			= os.getenv('SHOPIFY_API_PW',
 											 None )
-app.config['SHOPIFY_STORE_DOMAIN'] 		= os.environ.get('SHOPIFY_STORE_DOMAIN',
+app.config['SHOPIFY_STORE_DOMAIN'] 		= os.getenv('SHOPIFY_STORE_DOMAIN',
 											 'glitchlab.myshopify.com' )
 											 
 """Constants"""
@@ -118,6 +118,7 @@ def test_shopify_auth():
 	if 'count' in j:
 		return jsonify({'shopify_auth_success': True})
 	else:
+		import pdb; pdb.set_trace()
 		return jsonify({'shopify_auth_success': False})
 	
 @app.route('/api/ebay/test-auth')
@@ -153,20 +154,33 @@ def test_ebay_auth():
 @app.route('/api/shopify/product')
 def get_shopify_product():
 	if 'id' in request.args:
-		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + request.args['id'] + '.json'
-		logger.debug("Trying to GET the Shopify product {} by hitting {}".format(request.args['id'], url))
-		logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
-		response = requests.get(
-			url,
-			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW'])
-		)
+		with app.app_context():
+			p = glitchlab_shopify.get_shopify_product( request.args['id'] )
+		
 		try:
-			return jsonify(response.json())
-		except json.JSONDecodeError:
-			logger.error('Shopify said something that is not JSON: ' + response.text)
-			return 'Shopify said...' + response.text
+			json.dumps(p)
+			return jsonify(p)
+		except TypeError:
+			return jsonify({})
 	else:
 		return "You gotta supply a Shopify product ID in the 'id' GET param"
+		
+@app.route('/api/shopify/product-metafield', methods=['GET', 'POST'])
+def shopify_product_metafield():
+	if request.method == 'GET':
+		raise NotImplementedError('sorry')
+	if request.method == 'POST':
+		try:
+			req = request.get_json()
+			glitchlab_shopify.set_metafield( req['product_id'], req['key'], req['value'] )
+			return('', 204)
+		except json.JSONDecodeError as e:
+			logger.info('Got a POST request to /api/shopify/product-metafield but it wasn\'t valid JSON: {}'.format(e))
+			return('Not valid JSON', 400)
+		except KeyError as e:
+			logger.info('POST request to /api/shopify/product-metafield was missing key: {}'.format(e))
+			return('Missing a key or two', 400)
+		
 	
 @app.route('/api/ebay-oauth-callback', methods=['GET'])
 def handle_ebay_callback():
@@ -180,7 +194,7 @@ def handle_ebay_callback():
 		except RuntimeError as e:
 			return 'fuckin ebay problem: ' + e
 	else:
-		logger.error("Didn't get a code back from eBay oauth callback. Possibly user declined. eBay says: " + json.dumps(request.json()))
+		logger.error("Didn't get a code back from eBay oauth callback. Possibly user declined. eBay says: " + json.dumps(request.get_json()))
 		
 @app.route('/api/dev/session-keys', methods=['GET','POST'])
 def set_session_keys():
@@ -278,12 +292,12 @@ def get_ebay_product(sku):
 @app.route('/<path:file>')
 def serve_root(file):
 	logger.debug('Request for file {}'.format(file))
-	return send_from_directory(STATIC_FILE_DIR, file)
+	return send_from_directory(app.config['STATIC_FILE_DIR'], file)
 		
 @app.route('/')
 def index():
-	logger.debug('Got a request for root, trying to serve {}'.format(os.path.join(STATIC_FILE_DIR, 'index.html')))
-	return send_from_directory(STATIC_FILE_DIR, 'index.html')
+	logger.debug('Got a request for root, trying to serve {}'.format(os.path.join(app.config['STATIC_FILE_DIR'], 'index.html')))
+	return send_from_directory(app.config['STATIC_FILE_DIR'], 'index.html')
 	
 def get_access_token(auth_code):
 	"""

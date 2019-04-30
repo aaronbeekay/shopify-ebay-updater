@@ -77,7 +77,12 @@
 						<div class="input-group mb-3">
 							<input id="ebay-sku" name="ebay-sku" type="text" class="form-control">
 							<div class="input-group-append">
-								<button class="btn btn-outline-info" type="button">Link</button>
+								<button class="btn btn-outline-info" type="button" id="ebay-sku-link">
+									<span id="ebay_sku_button_text">Link</span>
+									<div class="spinner-border spinner-border-sm" role="status" hidden>
+										<span class="sr-only">Linking...</span>
+									</div>
+								</button>
 								<div class="spinner-grow" style="display: none;" id="ebay-loading-spinner" role="status">
 									<span class="sr-only">Loading...</span>
 								</div>

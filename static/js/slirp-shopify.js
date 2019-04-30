@@ -18,6 +18,7 @@ function loadShopifyProduct(product_id){
 /* Given an object representing one Shopify product, populate the form fields with its details. */
 function populateShopifyProductInfo(product){	
 	p = product.product;
+	p.metafields = product.metafields;
 	vs = p.variants;
 	
 	$('input#shopify-title').val(p.title);
@@ -42,6 +43,14 @@ function populateShopifyProductInfo(product){
 	}
 	$('input#shopify-weight').val('??');
 	$('input#shopify-condition').val('??');
+	$('input#shopify-manufacturer').val(p.metafields.Manufacturer);
+	$('input#shopify-mpn').val(p.metafields.MPN);
+	
+	if( 'ebay_sku' in p.metafields ){
+		// we have an associated eBay product, load it
+		$('input#ebay-sku').val(p.metafields.ebay_sku);
+		loadEbayProduct( p.metafields.ebay_sku );
+	}
 	
 	autoresize_descriptions();
 	
@@ -49,6 +58,7 @@ function populateShopifyProductInfo(product){
 	
 	// Update the eBay fields
 	update_ebay_fields_from_shopify();
+	update_ebay_sku_link_button();
 	autoresize_descriptions();
 }
 
@@ -86,6 +96,7 @@ function populateEbayProductInfo(product){
 	$('input#ebay-condition').val(ep.condition);
 	
 	autoresize_descriptions();
+	update_ebay_sku_link_button();
 	
 	ebay_product_fields_enabled(true);
 }
@@ -346,6 +357,95 @@ function autoresize_descriptions(){
 		);
 }
 
+/* Set or update a metafield for the Shopify product */
+function set_metafield(product_id, key, value, callback){
+	body = JSON.stringify({product_id: product_id, key: key, value: value})
+	$.ajax({
+		method: "POST",
+		url: '/api/shopify/product-metafield',
+		contentType: "application/json",
+		data: body,
+		success: callback 
+	});
+}
+
+/* Link the eBay product and the Shopify product (by writing the eBay SKU to a Shopify product metafield).
+ * Won't do anything if there is no Shopify product ID or no eBay SKU entered in their <input>s.
+ */
+function write_ebay_sku_metafield(){
+	var ebay_sku = $('input#ebay-sku').val();
+	var shopify_product_id = $('input#shopify-id').val()
+	
+	if( ebay_sku == '' || !isNormalInteger(shopify_product_id) ){
+		return;
+	}
+	set_ebay_sku_link_button_state(link_button_state.link_in_progress);
+	set_metafield(shopify_product_id, 'ebay_sku', ebay_sku, function(data){ 
+		loadShopifyProduct($('input#shopify-id').val());
+		loadEbayProduct($('input#ebay-sku').val());
+	});
+}
+
+/* https://stackoverflow.com/questions/10834796/validate-that-a-string-is-a-positive-integer */
+function isNormalInteger(str) {
+    var n = Math.floor(Number(str));
+    return n !== Infinity && String(n) === str && n > 0;
+}
+
+/* Set the state of the eBay SKU "Link" button */
+const link_button_state = {"disabled": 1, "linked": 2, "link_available": 3, "link_in_progress": 4}
+function set_ebay_sku_link_button_state(state){
+	b = $('button#ebay-sku-link');						// The button
+	s = b.children('.spinner-border');					// Spinner div
+	t = b.children('#ebay_sku_button_text');			// <span> with text label
+	switch(state){
+		case link_button_state.disabled:
+			b.attr('disabled', true);					// Disable button
+			b.removeClass('btn-outline-success');		// Remove green outline
+			b.addClass('btn-outline-info');				// Restore blue outline
+			t.text('Link');								// Update button text to reflect state
+			s.attr('hidden', true);						// Hide progress spinner
+			break;
+		case link_button_state.linked:
+			b.attr('disabled', true);					// Enable button
+			b.addClass('btn-outline-success');			// Add green outline
+			b.removeClass('btn-outline-info');			// Restore blue outline
+			t.text('Linked');							// Update button text to reflect state
+			s.attr('hidden', true);						// Hide progress spinner
+			break;
+		case link_button_state.link_available:
+			b.removeAttr('disabled');					// Enable button
+			b.removeClass('btn-outline-success');		// Add green outline
+			b.addClass('btn-outline-info');				// Restore blue outline
+			t.text('Link');								// Update button text to reflect state
+			s.attr('hidden', true);						// Hide progress spinner
+			break;
+		case link_button_state.link_in_progress:
+			b.attr('disabled', true);					// Disable button
+			b.removeClass('btn-outline-success');		// Add green outline
+			b.addClass('btn-outline-info');				// Restore blue outline
+			t.text('Link');								// Update button text to reflect state
+			s.removeAttr('hidden');						// Hide progress spinner
+			break;
+			
+	}
+}
+
+/* Update status of "link" button to reflect linking status */
+function update_ebay_sku_link_button(){
+
+	if( p.id == $('input#shopify-id').val() && p.metafields.ebay_sku == $('input#ebay-sku').val() ){
+		// Shopify field and eBay SKU match
+		set_ebay_sku_link_button_state( link_button_state.linked );
+	} else if( p.id == $('input#shopify-id').val() && $('input#ebay-sku').val != ''){
+		// Shopify product is loaded, and an eBay SKU is entered, but Shopify SKU field does not match the entered SKU
+		set_ebay_sku_link_button_state( link_button_state.link_available );
+	} else {
+		// No Shopify product entered, or no eBay SKU entered
+		set_ebay_sku_link_button_state( link_button_state.disabled );
+	}
+}
+
 
 $(document).ready(function(){
 	load_ebay_template();
@@ -356,7 +456,11 @@ $(document).ready(function(){
 	
 	$('input#ebay-sku').change(function(){
 		loadEbayProduct($('input#ebay-sku').val());
+		
+		
 	});
+	
+	$('button#ebay-sku-link').click( write_ebay_sku_metafield );
 	
 	// Set radio button appearance based on state
 	// 	TODO: This can probably be done trivially in CSS
