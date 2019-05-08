@@ -127,6 +127,8 @@ def test_shopify_auth():
 def test_ebay_auth():
 	"""Do a test call to the eBay API to make sure we have good credentials"""
 	
+	logger.debug('/api/ebay/test-auth: Session variables are => {}'.format(json.dumps(session)))
+	
 	if 'access_token' not in session:
 		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing', 'ebay_consent_url': app.config['EBAY_OAUTH_CONSENT_URL']})
 		
@@ -261,6 +263,7 @@ def ebay_product_endpoint():
 	Get an eBay inventory item by its SKU (GET), or update an existing item with new attributes (POST).
 	"""
 	if request.method == 'GET':
+		logger.debug('/api/ebay/product: Session variables are => {}'.format(json.dumps(session)))
 		return get_ebay_product( request.args.get('sku') )
 	elif request.method == 'POST':
 		try:
