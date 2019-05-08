@@ -92,7 +92,10 @@ def set_shopify_attributes(product_id, attributes):
 def set_ebay_attributes(product_sku, attributes):
 	"""Set eBay inventory item attributes from a dict."""
 	
-	auth_token = session['access_token']
+	try:
+		auth_token = session['access_token']
+	except KeyError as e:
+		return('No auth token provided', 400)
 	
 	# 1. Fetch the existing inventory item (eBay will overwrite all fields when we update, so merge locally)
 	try:
@@ -132,15 +135,17 @@ def set_ebay_attributes(product_sku, attributes):
 		
 	if 'errors' in j:
 		for e in j['errors']:
-			if e['errorId'] == EBAY_ERROR_SKU_NOT_FOUND:
+			if e['errorId'] == app.config['EBAY_ERROR_SKU_NOT_FOUND']:
 				raise ItemNotFoundError(e['message'])
 			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
 				raise AuthenticationError(e['message'])
-				
+			else:
+				return j
+				raise RuntimeError("Unexpected eBay error: {}".format( response.text ))
 	return j
-	raise NotImplementedError("sorry")
+	
 	
 def get_ebay_product(auth_token, product_sku):
 	"""
