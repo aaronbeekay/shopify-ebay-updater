@@ -88,6 +88,52 @@ def get_shopify_product(product_id):
 def set_shopify_attributes(product_id, attributes):
 	"""Set Shopify product attributes from a dict."""
 	raise NotImplementedError("sorry")
+
+def get_ebay_offer_id( product_sku ):
+	"""Get the eBay offer ID (or offer IDs) for a given product SKU."""
+	try:
+		auth_token = session['access_token']
+	except KeyError as e:
+		raise AuthenticationError("No access token provided")
+		
+	url = app.config['EBAY_INVENTORYOFFER_URL'].format( product_sku )
+	
+	headers = {
+		'Authorization': 'Bearer {}'.format( auth_token ),
+		'Content-Language': 'en-US'
+		}
+	logger.debug('Trying to get offers for eBay SKU {}...'.format( product_sku ))
+	response = requests.get( url, headers=headers )
+	logger.debug('Raw reply from eBay: {}'.format(response.text))
+	
+	offers = []
+	
+	if response.status_code == 404:
+		# eBay says, no offers for that
+		return(offers, 404)
+		
+	if 'errors' in j:
+		for e in j['errors']:
+			if e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']:
+				raise ItemNotFoundError(e['message'])
+			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
+				raise AuthenticationError(e['message'])
+			else:
+				logger.warning("Unexpected eBay error: {}".format( response.text ))
+				return(j, 406)
+	
+	try:
+		for offer in response.json()['offers']:
+			offers.push(offer['offerId'])
+	except json.JSONDecodeError as e:
+		logger.warning('Weird reply from eBay: {}'.format(response.text))
+		return('eBay weird reply', 400)
+	except KeyError:
+		logger.warning("Didn't find errors OR offers in eBay reply...")
+		return ('eBay weird reply', 500)
+		
 	
 def set_ebay_attributes(product_sku, attributes):
 	"""Set eBay inventory item attributes from a dict."""

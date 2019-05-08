@@ -60,6 +60,8 @@ app.config['SESSION_COOKIE_SAMESITE'] 	= 'Lax'
 											 
 """Constants"""
 app.config['EBAY_INVENTORYITEM_URL'] = 'https://api.ebay.com/sell/inventory/v1/inventory_item/{}'
+app.config['EBAY_INVENTORYOFFERS_URL'] = 'https://api.ebay.com/sell/inventory/v1/offer?sku={}'
+app.config['EBAY_INVENTORYOFFER_URL'] = 'https://api.ebay.com/sell/inventory/v1/offer/{}'
 app.config['constants'] = {	
 	'EBAY_ERROR_SKU_NOT_FOUND': 		25702,
 	'EBAY_ERROR_INVALID_ACCESS_TOKEN': 	1001,
@@ -275,8 +277,15 @@ def ebay_product_endpoint():
 	Get an eBay inventory item by its SKU (GET), or update an existing item with new attributes (POST).
 	"""
 	if request.method == 'GET':
-		#logger.debug('/api/ebay/product: Session variables are => {}'.format(json.dumps(dict(session))))
-		return get_ebay_product( request.args.get('sku') )
+		# Get the product details from the InventoryItem API
+		inventory_item = get_ebay_product( request.args.get('sku') )
+		
+		# Get any associated Offers and merge them into the response
+		offers = get_ebay_offers( request.args.get('sku') )
+		inventory_item['offers'] = offers
+		
+		return jsonify(inventory_item)
+		
 	elif request.method == 'POST':
 		if 'sku' not in request.args:
 			return(jsonify({'error': 'No SKU provided'}), 400)
