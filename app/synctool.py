@@ -45,6 +45,8 @@ app.config['SHOPIFY_STORE_DOMAIN'] 		= os.getenv('SHOPIFY_STORE_DOMAIN',
 											 'glitchlab.myshopify.com' )
 											 
 app.config['SESSION_COOKIE_DOMAIN'] 	= '.aaronbeekay.info'
+app.config['SESSION_COOKIE_HTTPONLY'] 	= False
+app.config['SESSION_COOKIE_SAMESITE'] 	= 'Lax'
 											 
 """Constants"""
 app.config['EBAY_INVENTORYITEM_URL'] = 'https://api.ebay.com/sell/inventory/v1/inventory_item/{}'
