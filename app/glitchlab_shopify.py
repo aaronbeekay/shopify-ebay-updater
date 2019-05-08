@@ -336,17 +336,7 @@ def get_ebay_product(auth_token, product_sku):
 	except json.JSONDecodeError:
 		logger.debug('Got a weird reply from eBay: {}'.format(response.text))
 		
-	if 'errors' in j:
-		for e in j['errors']:
-			if e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']:
-				raise ItemNotFoundError(e['message'])
-			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
-				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
-				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
-				raise AuthenticationError(e['message'])
-			else:
-				logger.warning("Unexpected eBay error code: {}".format(response.text))
-				return(j, 406)
+	handle_ebay_errors( j )
 				
 	return j
 				

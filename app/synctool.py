@@ -282,6 +282,8 @@ def ebay_product_endpoint():
 		
 		# Get any associated Offers and merge them into the response
 		offers = glitchlab_shopify.get_ebay_offers( request.args.get('sku') )
+		logger.debug('Type of `offers` is: {}'.format(type(offers)))
+		logger.debug('Type of `inventory_item` is: {}'.format(type(inventory_item)))
 		inventory_item['offers'] = offers
 		
 		return jsonify(inventory_item)
