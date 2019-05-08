@@ -89,14 +89,25 @@ def set_shopify_attributes(product_id, attributes):
 	"""Set Shopify product attributes from a dict."""
 	raise NotImplementedError("sorry")
 
-def get_ebay_offer_id( product_sku ):
+def get_ebay_offer_ids( product_sku ):
 	"""Get the eBay offer ID (or offer IDs) for a given product SKU."""
+	
+	offers = get_ebay_offers( product_sku )
+	
+	offer_ids = []
+	for offer in offers:
+		offer_ids.push(offer['offerId'])
+		
+	return offer_ids
+	
+def get_ebay_offers( product_sku ):
+	"""Get all of the eBay offers for a given product SKU."""
 	try:
 		auth_token = session['access_token']
 	except KeyError as e:
 		raise AuthenticationError("No access token provided")
 		
-	url = app.config['EBAY_INVENTORYOFFER_URL'].format( product_sku )
+	url = app.config['EBAY_INVENTORYOFFERS_URL'].format( product_sku )
 	
 	headers = {
 		'Authorization': 'Bearer {}'.format( auth_token ),
@@ -106,12 +117,136 @@ def get_ebay_offer_id( product_sku ):
 	response = requests.get( url, headers=headers )
 	logger.debug('Raw reply from eBay: {}'.format(response.text))
 	
+	try:
+		j = response.json()
+	except json.JSONDecodeError as e:
+		logger.warning('Weird reply from eBay: {}'.format(response.text))
+		return('eBay weird reply') #TODO should raise exception here
+		
 	offers = []
 	
 	if response.status_code == 404:
 		# eBay says, no offers for that
-		return(offers, 404)
+		return(offers) #TODO should raise exception here
 		
+	handle_ebay_errors(j)
+	
+	try:
+		for offer in response.json()['offers']:
+			offers.push(offer)
+	except KeyError:
+		logger.warning("Didn't find errors OR offers in eBay reply...")
+		return ('eBay weird reply') #TODO should raise exception here
+		
+	return offers
+		
+def get_ebay_offer( offer_id ):
+	"""
+	Get an eBay offer by its offer ID. You can find the Offer ID by calling `get_ebay_offer_ids`
+	for a given SKU.
+	
+	The Offer object sets listing-specific details for an item (like fulfillment policy, etc).
+	Specifically, it looks like the Shopify eBay integration uses the `listing_description` field
+	of the Offer object for the item's HTML description, and NOT the `description` field of the
+	`inventoryItem` itself.
+	"""
+	
+	try:
+		auth_token = session['access_token']
+	except KeyError as e:
+		raise AuthenticationError("No access token provided")
+		
+	url = app.config['EBAY_INVENTORYOFFER_URL'].format( offer_id )
+	
+	headers = {
+		'Authorization': 'Bearer {}'.format( auth_token ),
+		'Content-Language': 'en-US'
+		}
+	logger.debug('Trying to get offer ID {}...'.format( offer_id ))
+	response = requests.get( url, headers=headers )
+	logger.debug('Raw reply from eBay: {}'.format(response.text))
+	
+	try:
+		j = response.json()
+	except json.JSONDecodeError as e:
+		logger.warning('Weird reply from eBay: {}'.format(response.text))
+		return('eBay weird reply') #TODO should raise exception here
+		
+	offers = []
+	
+	if response.status_code == 404:
+		# eBay says, no offers for that
+		return(offers) #TODO should raise exception here
+		
+	handle_ebay_errors(j)
+	
+	return( j )
+	
+def update_ebay_offer( offer_id, update_fields ):
+	"""
+	Update an eBay offer by its ID (`offer_id`). 
+	
+	`update_ebay_offer()` will fetch the existing eBay offer, then merge in the fields provided in `update_fields`.
+	
+	It will fail if the eBay offer does not exist yet (you can't use it to make a new offer.)
+	"""
+	try:
+		auth_token = session['access_token']
+	except KeyError as e:
+		raise AuthenticationError("No access token provided")
+		
+	"""1. Fetch old offer to update"""
+	try:
+		old = get_ebay_offer( offer_id )
+	except ItemNotFoundError:
+		logger.info('set_ebay_attributes called for SKU {sku}, but eBay says item not found'.format(product_sku))
+		return None
+	
+	"""2. Merge in new fields"""
+	try:
+		new = merge( old, update_fields )
+	except RuntimeError as e:
+		from pprint import pprint
+		logger.error('Failed to merge new attributes into eBay offer dict. merge() says: {}'.format(e))
+		logger.error('Attributes attempting to merge in: {}'.format(pprint(update_fields)) )
+		
+	"""3. Call eBay's updateOffer with the merged offer"""
+	url = app.config['EBAY_INVENTORYOFFER_URL'].format( product_sku )
+	headers = {
+		'Authorization': 'Bearer {}'.format( auth_token ),
+		'Content-Language': 'en-US'
+		}
+	logger.debug('Trying to update eBay offer ID {}...'.format( offer_id ))
+	response = requests.put( url, headers=headers, json=new )
+	logger.debug('Raw reply from eBay: {}'.format(response.text))
+	
+	if response.status_code == 204:
+		# 204 No Content, this is a good thing
+		logger.debug('eBay returned 204 No Content, assume all went well')
+		return {}
+		
+	try:
+		j = response.json()
+	except json.JSONDecodeError:
+		j = None
+		logger.warning('Got a weird reply from eBay: {}'.format(response.text))
+		raise RuntimeError("eBay weird reply")
+		
+	handle_ebay_errors( j )
+	
+	return None
+	
+	
+def handle_ebay_errors( ebay_reply ):
+	"""
+	eBay API replies sometimes include an 'errors' field with number-coded errors.
+	
+	This function checks for the existence of that 'errors' field and raises the appropriate Python errors
+	for any that are found.
+	
+	If no errors are found, it returns `None`.
+	"""
+	
 	if 'errors' in j:
 		for e in j['errors']:
 			if e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']:
@@ -122,18 +257,7 @@ def get_ebay_offer_id( product_sku ):
 				raise AuthenticationError(e['message'])
 			else:
 				logger.warning("Unexpected eBay error: {}".format( response.text ))
-				return(j, 406)
-	
-	try:
-		for offer in response.json()['offers']:
-			offers.push(offer['offerId'])
-	except json.JSONDecodeError as e:
-		logger.warning('Weird reply from eBay: {}'.format(response.text))
-		return('eBay weird reply', 400)
-	except KeyError:
-		logger.warning("Didn't find errors OR offers in eBay reply...")
-		return ('eBay weird reply', 500)
-		
+				raise RuntimeError( response.text )
 	
 def set_ebay_attributes(product_sku, attributes):
 	"""Set eBay inventory item attributes from a dict."""
@@ -141,7 +265,7 @@ def set_ebay_attributes(product_sku, attributes):
 	try:
 		auth_token = session['access_token']
 	except KeyError as e:
-		return('No auth token provided', 400)
+		raise AuthenticationError("No access token provided")
 	
 	# 1. Fetch the existing inventory item (eBay will overwrite all fields when we update, so merge locally)
 	try:
