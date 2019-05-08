@@ -277,16 +277,8 @@ def ebay_product_endpoint():
 	Get an eBay inventory item by its SKU (GET), or update an existing item with new attributes (POST).
 	"""
 	if request.method == 'GET':
-		# Get the product details from the InventoryItem API
-		inventory_item = get_ebay_product( request.args.get('sku') )
 		
-		# Get any associated Offers and merge them into the response
-		offers = glitchlab_shopify.get_ebay_offers( request.args.get('sku') )
-		logger.debug('Type of `offers` is: {}'.format(type(offers)))
-		logger.debug('Type of `inventory_item` is: {}'.format(type(inventory_item)))
-		inventory_item['offers'] = offers
-		
-		return jsonify(inventory_item)
+		return get_ebay_product( request.args.get('sku') )
 		
 	elif request.method == 'POST':
 		if 'sku' not in request.args:
@@ -308,10 +300,16 @@ def get_ebay_product(sku):
 	if 'access_token' not in session or session.get('access_token_expiry') < datetime.datetime.utcnow():
 		# The client side will need to handle logging back in
 		return jsonify({'error': 'ebay_auth_invalid'})
-
+	
 	try:
-		p = glitchlab_shopify.get_ebay_product( session['access_token'], sku )
-		return jsonify(p)
+		# Get the product details from the InventoryItem API
+		inventory_item = glitchlab_shopify.get_ebay_product( session['access_token'], request.args.get('sku') )
+		
+		# Get any associated Offers and merge them into the response
+		offers = glitchlab_shopify.get_ebay_offers( request.args.get('sku')  )
+		inventory_item['offers'] = offers
+		
+		return jsonify(inventory_item)
 	except glitchlab_shopify.AuthenticationError as e:
 		return jsonify({'error': 'ebay_auth_invalid', 'message': e.message})
 	except glitchlab_shopify.ItemNotFoundError as e:
