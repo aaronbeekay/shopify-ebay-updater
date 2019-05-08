@@ -190,7 +190,7 @@ def handle_ebay_callback():
 		try:
 			authdict = get_access_token(request.args['code'])
 			
-			return redirect('/')
+			return redirect('http://ui.ebay-sync.slirp.aaronbeekay.info/')
 		except RuntimeError as e:
 			return 'fuckin ebay problem: ' + e
 	else:
@@ -296,6 +296,7 @@ def serve_root(file):
 		
 @app.route('/')
 def index():
+	return redirect('http://ui.ebay-sync.slirp.aaronbeekay.info')
 	logger.debug('Got a request for root, trying to serve {}'.format(os.path.join(app.config['STATIC_FILE_DIR'], 'index.html')))
 	return send_from_directory(app.config['STATIC_FILE_DIR'], 'index.html')
 	
