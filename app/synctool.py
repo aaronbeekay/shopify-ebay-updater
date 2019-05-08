@@ -5,12 +5,13 @@ import os
 import requests
 import datetime
 from flask_cors import CORS
+import re
 
 """Flask app setup"""
 app = Flask(__name__)
 CORS(app,
-	origins = [ '*.aaronbeekay.info',
-				'*.glitch.com' 			],
+	origins = [ re.compile('*.aaronbeekay.info'),
+				re.compile('*.glitch.com') 			],
 	supports_credentials = True 			)
 
 """Pick up data from env vars"""
