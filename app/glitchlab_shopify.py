@@ -96,7 +96,7 @@ def get_ebay_offer_ids( product_sku ):
 	
 	offer_ids = []
 	for offer in offers:
-		offer_ids.push(offer['offerId'])
+		offer_ids.append(offer['offerId'])
 		
 	return offer_ids
 	
@@ -133,7 +133,7 @@ def get_ebay_offers( product_sku ):
 	
 	try:
 		for offer in response.json()['offers']:
-			offers.push(offer)
+			offers.append(offer)
 	except KeyError:
 		logger.warning("Didn't find errors OR offers in eBay reply...")
 		return ('eBay weird reply') #TODO should raise exception here
