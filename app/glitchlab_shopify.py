@@ -142,8 +142,9 @@ def set_ebay_attributes(product_sku, attributes):
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
 				raise AuthenticationError(e['message'])
 			else:
-				return j
-				raise RuntimeError("Unexpected eBay error: {}".format( response.text ))
+				logger.warning("Unexpected eBay error: {}".format( response.text ))
+				return(j, 406)
+				
 	return j
 	
 	
@@ -173,6 +174,9 @@ def get_ebay_product(auth_token, product_sku):
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
 				raise AuthenticationError(e['message'])
+			else:
+				logger.warning("Unexpected eBay error code: {}".format(response.text))
+				return(j, 406)
 				
 	return j
 				
