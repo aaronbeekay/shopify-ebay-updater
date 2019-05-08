@@ -8,7 +8,10 @@ from flask_cors import CORS
 
 """Flask app setup"""
 app = Flask(__name__)
-CORS(app)
+CORS(app,
+	origins = [ '*.aaronbeekay.info',
+				'*.glitch.com' 			],
+	supports_credentials = True 			)
 
 """Pick up data from env vars"""
 if os.path.exists('.env'):
