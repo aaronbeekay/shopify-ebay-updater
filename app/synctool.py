@@ -284,9 +284,17 @@ def ebay_product_endpoint():
 		if 'sku' not in request.args:
 			return(jsonify({'error': 'No SKU provided'}), 400)
 		try:
-			return jsonify( glitchlab_shopify.set_ebay_attributes( 
-				request.args.get('sku'),
-				request.json				))
+			new = request.json
+			
+			if 'offers' in new and len(new['offers']) > 0:
+				# We need to update each of the associated offers too
+				for offer in new['offers']:
+					glitchlab_shopify.update_ebay_offer( offer['offerId'], offer )
+		
+			# Now update the product too
+			glitchlab_shopify.set_ebay_attributes( request.args.get('sku'), request.json )
+			
+			return('{}')
 		except json.JSONDecodeError as e:
 			logger.info('Bad request body sent to /api/ebay/product endpoint. Error: {}'.format(e))
 			logger.debug('Request body in question was {}'.format(request.text))
