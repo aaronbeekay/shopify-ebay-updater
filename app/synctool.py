@@ -129,7 +129,7 @@ def test_shopify_auth():
 def test_ebay_auth():
 	"""Do a test call to the eBay API to make sure we have good credentials"""
 	
-	logger.debug('/api/ebay/test-auth: Session variables are => {}'.format(json.dumps(dict(session))))
+	#logger.debug('/api/ebay/test-auth: Session variables are => {}'.format(json.dumps(dict(session))))
 	
 	if 'access_token' not in session:
 		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing', 'ebay_consent_url': app.config['EBAY_OAUTH_CONSENT_URL']})
@@ -217,7 +217,7 @@ def set_session_keys():
 				session[k] = datetime.datetime.fromisoformat(v)			
 			else:
 				session[k] = v
-		return jsonify({'changed': 'yes', 'session': dict(session) }  )
+		return jsonify({'changed': 'yes' }  )
 	if len(request.args) > 0:
 		for k,v in request.args.items():
 			if k == 'access_token_expiry':
@@ -225,7 +225,7 @@ def set_session_keys():
 				session[k] = datetime.datetime.fromisoformat(v)			
 			else:
 				session[k] = v
-		return jsonify( {'changed': 'yes', 'session': dict(session) }  )
+		return jsonify( {'changed': 'yes' }  )
 	try:
 		for k,v in request.json():
 			if k == 'access_token_expiry':
@@ -233,11 +233,11 @@ def set_session_keys():
 				session[k] = datetime.datetime.fromisoformat(v)			
 			else:
 				session[k] = v
-		return jsonify( {'changed': 'yes', 'session': dict(session) }  )
+		return jsonify( {'changed': 'yes' }  )
 	except json.JSONDecodeError:
-		return jsonify( {'changed': 'no', 'session': dict(session) } )
+		return jsonify( {'changed': 'no' } )
 	else:
-		return jsonify( {'changed': 'no', 'session': dict(session) } )
+		return jsonify( {'changed': 'no' } )
 		
 @app.route('/api/test-ebay-call')
 def test_ebay_api_call():
@@ -265,7 +265,7 @@ def ebay_product_endpoint():
 	Get an eBay inventory item by its SKU (GET), or update an existing item with new attributes (POST).
 	"""
 	if request.method == 'GET':
-		logger.debug('/api/ebay/product: Session variables are => {}'.format(json.dumps(dict(session))))
+		#logger.debug('/api/ebay/product: Session variables are => {}'.format(json.dumps(dict(session))))
 		return get_ebay_product( request.args.get('sku') )
 	elif request.method == 'POST':
 		try:
