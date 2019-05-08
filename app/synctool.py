@@ -10,8 +10,14 @@ import re
 """Flask app setup"""
 app = Flask(__name__)
 CORS(app,
-	origins = [ re.compile('*.aaronbeekay.info'),
-				re.compile('*.glitch.com') 			],
+	origins = [ 'http://ui.ebay-sync.slirp.aaronbeekay.info',
+				'https://ui.ebay-sync.slirp.aaronbeekay.info',
+				'https://ebay-sync.slirp.aaronbeekay.info' ,
+				'http://ebay-sync.slirp.aaronbeekay.info',
+				'http://glorious-pail.glitch.me',
+				'https://glorious-pail.glitch.me',
+				'http://glitch.com',
+				'https://glitch.com'			],
 	supports_credentials = True 			)
 
 """Pick up data from env vars"""
