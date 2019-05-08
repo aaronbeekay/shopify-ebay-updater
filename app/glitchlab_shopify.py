@@ -135,7 +135,7 @@ def set_ebay_attributes(product_sku, attributes):
 		
 	if 'errors' in j:
 		for e in j['errors']:
-			if e['errorId'] == app.config['EBAY_ERROR_SKU_NOT_FOUND']:
+			if e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']:
 				raise ItemNotFoundError(e['message'])
 			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
