@@ -247,8 +247,8 @@ def handle_ebay_errors( ebay_reply ):
 	If no errors are found, it returns `None`.
 	"""
 	
-	if 'errors' in j:
-		for e in j['errors']:
+	if 'errors' in ebay_reply:
+		for e in ebay_reply['errors']:
 			if e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']:
 				raise ItemNotFoundError(e['message'])
 			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
@@ -256,8 +256,8 @@ def handle_ebay_errors( ebay_reply ):
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
 				raise AuthenticationError(e['message'])
 			else:
-				logger.warning("Unexpected eBay error: {}".format( response.text ))
-				raise RuntimeError( response.text )
+				logger.warning("Unexpected eBay error: {}".format( json.dumps(ebay_reply) ))
+				raise RuntimeError( ebay_reply )
 	
 def set_ebay_attributes(product_sku, attributes):
 	"""Set eBay inventory item attributes from a dict."""
