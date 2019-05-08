@@ -278,9 +278,10 @@ def ebay_product_endpoint():
 		#logger.debug('/api/ebay/product: Session variables are => {}'.format(json.dumps(dict(session))))
 		return get_ebay_product( request.args.get('sku') )
 	elif request.method == 'POST':
+		if 'sku' not in request.args:
+			return(jsonify({'error': 'No SKU provided'}), 400)
 		try:
 			return jsonify( glitchlab_shopify.set_ebay_attributes( 
-				session['access_token'],
 				request.args.get('sku'),
 				request.json				))
 		except json.JSONDecodeError as e:
