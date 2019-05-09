@@ -235,8 +235,7 @@ def update_ebay_offer( offer_id, update_fields ):
 	handle_ebay_errors( j )
 	
 	return None
-	
-	
+		
 def handle_ebay_errors( ebay_reply ):
 	"""
 	eBay API replies sometimes include an 'errors' field with number-coded errors.
@@ -316,7 +315,6 @@ def set_ebay_attributes(product_sku, attributes):
 				return(j, 406)
 				
 	return j
-	
 	
 def get_ebay_product(auth_token, product_sku):
 	"""
