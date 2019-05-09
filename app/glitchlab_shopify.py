@@ -199,7 +199,7 @@ def update_ebay_offer( offer_id, update_fields ):
 	try:
 		old = get_ebay_offer( offer_id )
 	except ItemNotFoundError:
-		logger.info('set_ebay_attributes called for SKU {sku}, but eBay says item not found'.format(product_sku))
+		logger.info('set_ebay_attributes called for offer ID {}, but eBay says item not found'.format(offer_id))
 		return None
 	
 	"""2. Merge in new fields"""
@@ -211,7 +211,7 @@ def update_ebay_offer( offer_id, update_fields ):
 		logger.error('Attributes attempting to merge in: {}'.format(pprint(update_fields)) )
 		
 	"""3. Call eBay's updateOffer with the merged offer"""
-	url = app.config['EBAY_INVENTORYOFFER_URL'].format( product_sku )
+	url = app.config['EBAY_INVENTORYOFFER_URL'].format( offer_id )
 	headers = {
 		'Authorization': 'Bearer {}'.format( auth_token ),
 		'Content-Language': 'en-US'
