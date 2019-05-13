@@ -107,9 +107,8 @@ def set_shopify_attributes(product_id, attributes):
 			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
 			json=pRequest
 		)
-		try:
-			p = response.json()
-			logger.debug("Shopify said: " + response.text)
+		p = response.json()
+		logger.debug("Shopify said: " + response.text)
 	except json.JSONDecodeError:
 		logger.error('Shopify said something that is not JSON: ' + response.text)
 		return 'Shopify said...' + response.text
