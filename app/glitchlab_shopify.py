@@ -477,7 +477,8 @@ def set_metafield(product_id, key, value):
 			)
 	else:
 		# Make a new metafield
-		type_string = guess_metafield_type(value)
+		#type_string = guess_metafield_type(value) # this doesn't work lol
+		type_string = 'string'
 		new_data = {"metafield": {"key": key, "value": value, "value_type": type_string, "namespace": "global"}}
 		
 		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + 	\
