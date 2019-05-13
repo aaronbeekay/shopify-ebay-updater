@@ -169,19 +169,28 @@ def test_ebay_auth():
 		logger.warning('Failed eBay auth verification in a way that is not handled... eBay said: {}'.format(response.text))
 		return jsonify({'ebay_auth_success': False, 'error': 'lazy_programmer_error'})
 	
-@app.route('/api/shopify/product')
-def get_shopify_product():
-	if 'id' in request.args:
+@app.route('/api/shopify/product', methods=['GET', 'POST'])
+def shopify_product_endpoint():
+	if 'id' not in request.args:
+		return("You need to supply the id parameter", 400)
+	
+	if request.method == 'GET':
 		with app.app_context():
-			p = glitchlab_shopify.get_shopify_product( request.args['id'] )
-		
+			p = glitchlab_shopify.get_shopify_product( request.args['id'] )	
 		try:
 			json.dumps(p)
 			return jsonify(p)
 		except TypeError:
 			return jsonify({})
-	else:
-		return "You gotta supply a Shopify product ID in the 'id' GET param"
+	
+	if request.method == 'POST':
+		try:
+			set_shopify_attributes( request['id'], request.json )
+		except json.JSONDecodeError as e:
+			logger.warning("Bad (non-JSON) request sent to shopify product update endpoint: " + e)
+			return("Invalid JSON body", 400)
+			
+		return('', 204)
 		
 @app.route('/api/shopify/product-metafield', methods=['GET', 'POST'])
 def shopify_product_metafield():

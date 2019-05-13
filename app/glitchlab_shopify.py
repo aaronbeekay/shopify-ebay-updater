@@ -44,13 +44,13 @@ def merge(a, b, path=None, update=True):
 			a[key] = b[key]
 	return a
 
-def render_product_template(template, product):
+def render_product_template(template, shopifyProduct):
 	"""make the HTML description for a product. template is a file path"""
 	with open(template) as f:
 		t = f.read()
 	
-	fields = {	'item_name': 			product.title,
-				'item_description': 	product.body_html
+	fields = {	'item_name': 			shopifyProduct.title,
+				'item_description': 	shopifyProduct.body_html
 				}
 	
 	return pystache.render(t, fields)
@@ -86,8 +86,41 @@ def get_shopify_product(product_id):
 	return p
 
 def set_shopify_attributes(product_id, attributes):
-	"""Set Shopify product attributes from a dict."""
-	raise NotImplementedError("sorry")
+	"""
+	Set Shopify product attributes from a dict.
+	
+	Shopify's `product` endpoint doesn't include metafields in the response, which is annoying.
+	So - if we have metafields present in the update request, we will make a separate call to 
+	`set_metafield()` for each metafield.
+	"""
+	
+	try:
+		pRequest = attributes['product']
+		pRequest['product']['id'] = product_id
+		# Hit the Product endpoint first
+		#   TODO: Why the fuck am I doing this manually when I have the Shopify API right here?
+		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + product_id + '.json'
+		logger.debug("Trying to PUT to the Shopify product {} by hitting {}".format(product_id, url))
+		logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
+		response = requests.put(
+			url,
+			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
+			json=pRequest
+		)
+		try:
+			p = response.json()
+			logger.debug("Shopify said: " + response.text)
+	except json.JSONDecodeError:
+		logger.error('Shopify said something that is not JSON: ' + response.text)
+		return 'Shopify said...' + response.text
+	except KeyError as e:
+		raise ValueError("You have to supply a dict with a 'product' key... " + e)
+		
+	if 'metafields' in attributes:
+		for k,v in attributes['metafields'].items():
+			set_metafield(product_id, k, v)
+	
+	return True
 
 def get_ebay_offer_ids( product_sku ):
 	"""Get the eBay offer ID (or offer IDs) for a given product SKU."""
@@ -358,24 +391,6 @@ def shopify_authenticate(api_key=None, api_password=None):
 	shop_url = "https://{k}:{pw}@glitchlab.myshopify.com/admin".format(k=api_key, pw=api_password)
 	logger.debug('Setting shop url: {}'.format(shop_url))
 	shopify.ShopifyResource.set_site(shop_url)
-	
-# def get_metafields(id):
-# 	"""Return a dict of metafields and values for a Shopify product"""
-# 	shopify_authenticate()
-# 	product = shopify.Product.find(id)
-# 	
-# 	d = {}
-# 	#import pdb;pdb.set_trace()
-# 	for m in product.metafields():
-# 		k = m.key
-# 		
-# 		if m.value_type == 'integer':
-# 			v = int(m.value)
-# 		else:
-# 			v = m.value
-# 		
-# 		d[k] = v
-# 	return d
 
 def get_metafields(product_id, with_ids=False):
 	"""
