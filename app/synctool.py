@@ -185,7 +185,7 @@ def shopify_product_endpoint():
 	
 	if request.method == 'POST':
 		try:
-			set_shopify_attributes( request['id'], request.json )
+			glitchlab_shopify.set_shopify_attributes( request['id'], request.json )
 		except json.JSONDecodeError as e:
 			logger.warning("Bad (non-JSON) request sent to shopify product update endpoint: " + e)
 			return("Invalid JSON body", 400)
