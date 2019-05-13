@@ -95,7 +95,7 @@ def set_shopify_attributes(product_id, attributes):
 	"""
 	
 	try:
-		pRequest = attributes['product']
+		pRequest = {"product": attributes['product']}
 		pRequest['product']['id'] = product_id
 		# Hit the Product endpoint first
 		#   TODO: Why the fuck am I doing this manually when I have the Shopify API right here?
