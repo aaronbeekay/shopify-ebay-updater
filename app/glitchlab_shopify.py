@@ -468,8 +468,11 @@ def set_metafield(product_id, key, value):
 		metafield_id = existing[key]['id']
 		update_data = {"metafield": {"id": metafield_id, "key": key, "value": value}}
 		
-		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + 	\
-				product_id + '/metafields/' + metafield_id + '.json'
+		url = 'https://{store_domain}/admin/api/2019-04/products/{product_id}/metafields/{metafield_id}.json'.format(
+			store_domain=app.config['SHOPIFY_STORE_DOMAIN'],
+			product_id=product_id,
+			metafield_id=metafield_id
+			)
 		response = requests.put(
 			url,
 			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
