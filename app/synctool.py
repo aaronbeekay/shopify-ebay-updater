@@ -199,7 +199,11 @@ def shopify_product_metafield():
 	if request.method == 'POST':
 		try:
 			req = request.get_json()
-			glitchlab_shopify.set_metafield( req['product_id'], req['key'], req['value'] )
+			try:
+				glitchlab_shopify.set_metafield( req['product_id'], req['key'], req['value'] )
+			except:
+				return(500)
+				raise
 			return('', 204)
 		except json.JSONDecodeError as e:
 			logger.info('Got a POST request to /api/shopify/product-metafield but it wasn\'t valid JSON: {}'.format(e))
