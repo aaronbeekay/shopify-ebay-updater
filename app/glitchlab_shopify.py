@@ -81,8 +81,25 @@ def get_shopify_product(product_id):
 	# TODO: see if the response is a valid product
 	
 	# Retrieve metafields and add them in
-	p['metafields'] = get_metafields( product_id )
+	p['product']['metafields'] = get_metafields( product_id )
 	
+	# Sigh. Shopify returns the metafields as a list of dicts. Reformat this into a dict with
+	# 	variants[variant_id] = {variant_dict}, for ease of manipulation later.
+	# This means we will have to undo this transformation when we're writing a product later.
+	# Also grab the metafields for each Variant as we go.
+	try:
+		pvs = p['product']['variants']
+	except KeyError:
+		pvs = {}
+	
+	p['product']['variants'] = {}
+	for v in pvs:
+		vid = v['id']
+		p['product']['variants'][vid] = v				# Add the variant data to the 'variants' dict
+		
+		vmfs = get_variant_metafields( product_id, vid )
+		p['product']['variants'][vid]['metafields'] = vmfs
+		
 	return p
 
 def set_shopify_attributes(product_id, attributes):
@@ -438,6 +455,43 @@ def get_metafields(product_id, with_ids=False):
 	#   TODO: Why the fuck am I doing this manually when I have the Shopify API right here?
 	url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + product_id + '/metafields.json'
 	logger.debug("Trying to GET the Shopify product metafields {} by hitting {}".format(product_id, url))
+	logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
+	response = requests.get(
+		url,
+		auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW'])
+	)
+	try:
+		ms = response.json()
+	except json.JSONDecodeError:
+		logger.error('Shopify said something that is not JSON: ' + response.text)
+		return 'Shopify said...' + response.text
+	
+	# Construct a more sensible array of metafields (key => value)
+	m = {}
+	if with_ids is False:
+		for f in ms['metafields']:
+			m[f['key']] = f['value']
+	elif with_ids is True:
+		for f in ms['metafields']:
+			m[f['key']] = {'id': f['id'], 'value': f['value'], 'value_type': f['value_type']}		
+	return m
+	
+def get_variant_metafields(product_id, variant_id, with_ids=False):
+	"""
+	Get the metafields for a product variant without using shopify api
+	
+	If `with_ids` is True, will return a dict of {key: {'id': id, 'value': value, 'value_type': value_type}}.
+	If `with_ids` is False, will return a dict of {key: value}.
+	
+	value_type is one of ("string", "json_string", "integer"), per Shopify.
+	"""
+	
+	url = 'https://{domain}/admin/api/2019-04/products/{pid}/variants/{vid}/metafields.json'.format(
+		domain=app.config['SHOPIFY_STORE_DOMAIN'],
+		pid=product_id,
+		vid=variant_id
+		)
+	logger.debug("Trying to GET the Shopify variant metafields for product {}, variant {}, by hitting {}".format(product_id, variant_id, url))
 	logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
 	response = requests.get(
 		url,
