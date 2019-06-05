@@ -65,6 +65,7 @@ app.config['EBAY_INVENTORYOFFERS_URL'] = 'https://api.ebay.com/sell/inventory/v1
 app.config['EBAY_INVENTORYOFFER_URL'] = 'https://api.ebay.com/sell/inventory/v1/offer/{}'
 app.config['constants'] = {	
 	'EBAY_ERROR_SKU_NOT_FOUND': 		25702,
+	'EBAY_ERROR_ENTITY_NOT_FOUND':		25710,
 	'EBAY_ERROR_INVALID_ACCESS_TOKEN': 	1001,
 	'EBAY_ERROR_MISSING_ACCESS_TOKEN': 	1002,
 	'EBAY_ERROR_ACCESS_DENIED': 		1100

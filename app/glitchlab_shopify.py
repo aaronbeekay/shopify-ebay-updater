@@ -281,7 +281,8 @@ def handle_ebay_errors( ebay_reply ):
 	
 	if 'errors' in ebay_reply:
 		for e in ebay_reply['errors']:
-			if e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']:
+			if ( 	e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']		\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ENTITY_NOT_FOUND'] 	):
 				raise ItemNotFoundError(e['message'])
 			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
 				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
