@@ -60,6 +60,7 @@ app.config['SESSION_COOKIE_SAMESITE'] 	= 'Lax'
 											 
 """Constants"""
 app.config['EBAY_INVENTORYITEM_URL'] = 'https://api.ebay.com/sell/inventory/v1/inventory_item/{}'
+app.config['EBAY_INVENTORYITEMGROUP_URL'] = 'https://api.ebay.com/sell/inventory/v1/inventory_item_group/{}'
 app.config['EBAY_INVENTORYOFFERS_URL'] = 'https://api.ebay.com/sell/inventory/v1/offer?sku={}'
 app.config['EBAY_INVENTORYOFFER_URL'] = 'https://api.ebay.com/sell/inventory/v1/offer/{}'
 app.config['constants'] = {	
@@ -334,7 +335,25 @@ def get_ebay_product(sku):
 	except glitchlab_shopify.AuthenticationError as e:
 		return jsonify({'error': 'ebay_auth_invalid', 'message': e.message})
 	except glitchlab_shopify.ItemNotFoundError as e:
-		return jsonify({'error': 'ebay_item_not_found', 'message': e.message})
+		"""
+		Check if this is an InventoryItemGroup - eBay will return item not found if you search for 
+			an inventoryItemGroup SKU using getInventoryItem().
+		"""
+		try:
+			logger.debug("eBay returned 404 for SKU {} using getInventoryItem(), checking if it is an inventoryItemGroup...".format(request.args.get('sku')))
+			inventory_item_group = glitchlab_shopify.get_ebay_inventoryitemgroup( session['access_token'], request.args.get('sku') )
+			
+			# If we got a good response and there are variant SKUs in the InventoryItemGroup, fetch the details for those as well...
+			if 'variantSKUs' in inventory_item_group:
+				inventory_item_group['variants'] = []
+				for vsku in inventory_item_group['variantSKUs']:
+					inventory_item_group['variants'].append( glitchlab_shopify.get_ebay_product(
+																			session['access_token'],
+																			vsku 
+																			))
+				return jsonify(inventory_item_group)
+			except glitchlab_shopify.ItemNotFoundError as e:
+				return jsonify({'error': 'ebay_item_not_found', 'message': e.message})
 
 # Serve static files using send_from_directory()	
 @app.route('/<path:file>')

@@ -370,6 +370,38 @@ def get_ebay_product(auth_token, product_sku):
 	handle_ebay_errors( j )
 				
 	return j
+	
+def set_ebay_inventoryitemgroup(inventoryitemgroup_key, attributes):
+	"""
+	Just like `set_ebay_attributes()`, write the attributes given in the `attributes` arg to the given eBay
+	inventoryItemGroup. 
+	
+	Like `set_ebay_attributes()`, 
+	"""
+	raise NotImplementedError("sorry")
+
+def get_ebay_inventoryitemgroup(auth_token, inventoryitemgroup_key):
+	"""
+	Fetch the eBay details for an InventoryItemGroup with the InventoryItemGroupKey `inventoryitemgroup_key`. 
+	Return them as a dict.
+	
+	Raises AuthenticationError if not authenticated.
+	
+	Raises ItemNotFoundError if item doesn't exist.
+	"""
+	url = app.config['EBAY_INVENTORYITEMGROUP_URL'].format(inventoryitemgroup_key)
+	auth = {'Authorization': 'Bearer {}'.format(auth_token)}
+	logger.debug('Trying to fetch eBay inventoryItemGroup {}...'.format(inventoryitemgroup_key))
+	response = requests.get( url, headers=auth )
+	
+	try:
+		j = response.json()
+	except json.JSONDecodeError:
+		logger.debug('Got a weird reply from eBay: {}'.format(response.text))
+		
+	handle_ebay_errors( j )
+				
+	return j
 				
 def shopify_authenticate(api_key=None, api_password=None):
 	"""Authenticate with the Shopify API given a certain API key and password. If none given, check the app config""" 
