@@ -351,9 +351,11 @@ def get_ebay_product(sku):
 																			session['access_token'],
 																			vsku 
 																			))
-				return jsonify(inventory_item_group)
-			except glitchlab_shopify.ItemNotFoundError as e:
-				return jsonify({'error': 'ebay_item_not_found', 'message': e.message})
+			
+			return jsonify(inventory_item_group)
+				
+		except glitchlab_shopify.ItemNotFoundError as e:
+			return jsonify({'error': 'ebay_item_not_found', 'message': e.message})
 
 # Serve static files using send_from_directory()	
 @app.route('/<path:file>')
