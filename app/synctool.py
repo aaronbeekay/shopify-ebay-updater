@@ -346,12 +346,13 @@ def get_ebay_product(sku):
 			
 			# If we got a good response and there are variant SKUs in the InventoryItemGroup, fetch the details for those as well...
 			if 'variantSKUs' in inventory_item_group:
-				inventory_item_group['variants'] = []
+				inventory_item_group['variants'] = {}
 				for vsku in inventory_item_group['variantSKUs']:
-					inventory_item_group['variants'].append( glitchlab_shopify.get_ebay_product(
-																			session['access_token'],
-																			vsku 
-																			))
+					v = glitchlab_shopify.get_ebay_product( session['access_token'], vsku )
+					if 'sku' in v:
+						inventory_item_group[v['sku']] = v
+					else:
+						logger.warning("eBay sent us a variant that doesn't seem to have a SKU attribute... expected SKU {}, not adding it to the inventoryItemGroup.".format(vsku))
 			
 			return jsonify(inventory_item_group)
 				
