@@ -78,7 +78,8 @@ def get_shopify_product(product_id):
 		logger.error('Shopify said something that is not JSON: ' + response.text)
 		return 'Shopify said...' + response.text
 		
-	# TODO: see if the response is a valid product
+	if response.status_code == 404:
+		raise ItemNotFoundError()
 	
 	# Retrieve metafields and add them in
 	p['product']['metafields'] = get_metafields( product_id )

@@ -238,12 +238,15 @@ def shopify_product_endpoint():
 	
 	if request.method == 'GET':
 		with app.app_context():
-			p = glitchlab_shopify.get_shopify_product( request.args['id'] )	
-		try:
-			json.dumps(p)
-			return jsonify(p)
-		except TypeError:
-			return jsonify({})
+			try:
+				p = glitchlab_shopify.get_shopify_product( request.args['id'] )	
+				json.dumps(p)
+				return jsonify(p)
+			except TypeError:
+				return jsonify({})
+			except glitchlab_shopify.ItemNotFoundError:
+				return('No Shopify product found for that ID', 404)
+				logger.info('Shopify product not found: {}'.format(request.args['id']))
 	
 	if request.method == 'POST':
 		try:
