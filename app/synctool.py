@@ -172,6 +172,7 @@ def test_ebay_auth():
 		return jsonify({'ebay_auth_success': False, 'error': 'lazy_programmer_error'})
 	
 @app.route('/api/shopify/product', methods=['GET', 'POST'])
+@cross_origin()
 def shopify_product_endpoint():
 	if 'id' not in request.args:
 		return("You need to supply the id parameter", 400)
@@ -198,15 +199,27 @@ def shopify_product_endpoint():
 def shopify_product_metafield():
 	if request.method == 'GET':
 		raise NotImplementedError('sorry')
+		
 	if request.method == 'POST':
 		try:
 			req = request.get_json()
 			try:
-				glitchlab_shopify.set_metafield( req['product_id'], req['key'], req['value'] )
+				if 'variant_id' in req:
+					glitchlab_shopify.set_metafield( 
+						req['product_id'], 
+						req['key'], 
+						req['value'], 
+						variant_id=req['variant_id']	)
+				else:
+					glitchlab_shopify.set_metafield( 
+						req['product_id'], 
+						req['key'], 
+						req['value'] 					)
 			except:
 				return(500)
 				raise
 			return('', 204)
+			
 		except json.JSONDecodeError as e:
 			logger.info('Got a POST request to /api/shopify/product-metafield but it wasn\'t valid JSON: {}'.format(e))
 			return('Not valid JSON', 400)

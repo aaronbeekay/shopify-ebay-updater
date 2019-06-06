@@ -536,28 +536,44 @@ def set_metafields(product, metafields):
 		else:
 			logger.info('Successfully updated product id {} with metafield {} = {}'.format(product.id, k, v))
 			
-def set_metafield(product_id, key, value):
+def set_metafield(product_id, key, value, variant_id=None):
 	"""
 	Create or update a single metafield for a product with ID `product_id`.
 	
-	set_metafield() will download the existing metafields for the product. If the metafield with key `key` exists, 
+	If `variant_id` is set, write the metafield to the Product Variant instead of the base product.
+	
+	set_metafield() will download the existing metafields for the product or variant. If the metafield with key `key` exists, 
 		its value will be updated to be `value`. If not, it will be created.
 	
 	Doesn't return anything.
 	"""
-
-	logger.debug('Going to set metafield with key={} to {} for product {}.'.format(key, value, product_id))
-	existing = get_metafields(product_id, with_ids=True)
 	
+	if variant_id is None:
+		logger.debug('Going to set metafield with key={} to {} for product {}.'.format(key, value, product_id))
+		existing = get_metafields(product_id, with_ids=True)
+	else:
+		logger.debug('Going to set metafield {} = {} for variant {} of product {}.'.format(key,value, variant_id,product_id))
+		existing = get_variant_metafields(product_id, with_ids=True)
+		
 	if key in existing:
-		logger.debug('Looks like {k} already exists for product {pid} (currently set to {v}). Will update.'.format(k=key,pid=product_id,v=existing[key]['value']))
+		if variant_id is None:
+			logger.debug('Looks like {k} already exists for product {pid} (currently set to {v}). Will update.'.format(k=key,pid=product_id,v=existing[key]['value']))
+		else:
+			logger.debug('Looks like {k} already exists for variant {vid} of product {pid} (currently set to {v}). Will update.'.format(k=key,pid=product_id,vid=variant_id,v=existing[key]['value']))
+		
 		# Update that particular metafield
 		metafield_id = existing[key]['id']
 		update_data = {"metafield": {"id": metafield_id, "key": key, "value": value}}
 		
-		url = 'https://{store_domain}/admin/api/2019-04/products/{product_id}/metafields/{metafield_id}.json'.format(
+		if variant_id is None:
+			url = 'https://{store_domain}/admin/api/2019-04/products/{product_id}/metafields/{metafield_id}.json'
+		else:
+			url = 'https://{store_domain}/admin/api/2019-04/products/{product_id}/variants/{variant_id}/metafields/{metafield_id}.json'	
+		
+		url = url.format(
 			store_domain=app.config['SHOPIFY_STORE_DOMAIN'],
 			product_id=product_id,
+			variant_id=variant_id,
 			metafield_id=metafield_id
 			)
 		response = requests.put(
@@ -567,13 +583,22 @@ def set_metafield(product_id, key, value):
 			)
 	else:
 		# Make a new metafield
-		#type_string = guess_metafield_type(value) # this doesn't work lol
 		type_string = 'string'
 		new_data = {"metafield": {"key": key, "value": value, "value_type": type_string, "namespace": "global"}}
 		
-		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + 	\
-				product_id + '/metafields.json'
-		logger.debug('OK, making a new metafield for product {}: {}'.format(product_id, json.dumps(new_data)))
+		if variant_id is None:
+			url = 'https://{domain}/admin/api/2019-04/products/{pid}/metafields.json'
+		else:
+			url = 'https://{domain}/admin/api/2019-04/products/{pid}/variants/{vid}/metafields.json'
+			
+		url = url.format( 	domain=app.config['SHOPIFY_STORE_DOMAIN'],
+							pid=product_id,
+							vid=variant_id 		)
+	
+		logger.debug('OK, making a new metafield for product {pid} (variant {vid}): {newdata}'.format(
+				pid=product_id, 
+				vid=variant_id,
+				newdata=json.dumps(new_data)	))
 		response = requests.post(
 			url,
 			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
