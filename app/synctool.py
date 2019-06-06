@@ -82,6 +82,7 @@ import glitchlab_shopify
 def crossdomain(origin=None, methods=None, headers=None, max_age=21600,
                 attach_to_all=True, automatic_options=True):
     import datetime
+    from functools import update_wrapper
     """Decorator function that allows crossdomain requests.
       Courtesy of
       https://blog.skyred.fi/articles/better-crossdomain-snippet-for-flask.html
