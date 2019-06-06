@@ -81,6 +81,7 @@ import glitchlab_shopify
 
 def crossdomain(origin=None, methods=None, headers=None, max_age=21600,
                 attach_to_all=True, automatic_options=True):
+    import datetime
     """Decorator function that allows crossdomain requests.
       Courtesy of
       https://blog.skyred.fi/articles/better-crossdomain-snippet-for-flask.html
@@ -93,7 +94,7 @@ def crossdomain(origin=None, methods=None, headers=None, max_age=21600,
     # use str instead of basestring if using Python 3.x
     if not isinstance(origin, str):
         origin = ', '.join(origin)
-    if isinstance(max_age, timedelta):
+    if isinstance(max_age, datetime.timedelta):
         max_age = max_age.total_seconds()
 
     def get_methods():
