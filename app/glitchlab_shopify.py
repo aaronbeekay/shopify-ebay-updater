@@ -120,11 +120,12 @@ def set_shopify_attributes(product_id, attributes):
 		
 		# Reformat the variants array
 		if 'variants' in attributes:
-			pRequest['product']['variants'] = []
+			newVariants = []
 			for vid in attributes['variants'].keys():
 				v = attributes['variants'][vid]
 				v['id'] = vid
-				pRequest['product'][variants].append(v)
+				newVariants.append(v)
+			pRequest['product']['variants'] = newVariants
 		
 		# Hit the Product endpoint first
 		#   TODO: Why the fuck am I doing this manually when I have the Shopify API right here?
