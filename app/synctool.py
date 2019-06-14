@@ -255,7 +255,7 @@ def shopify_product_endpoint():
 			logger.warning("Bad (non-JSON) request sent to shopify product update endpoint: " + e)
 			return( jsonify({"error": "Invalid JSON body"}), 400)
 			
-		return( jsonify({"Status": "OK"}), 204 )
+		return( jsonify({"Status": "OK"}), 200 )
 		
 @app.route('/api/shopify/product-metafield', methods=['GET', 'POST'])
 def shopify_product_metafield():
@@ -280,7 +280,7 @@ def shopify_product_metafield():
 			except:
 				return( jsonify({"error": "some kind of problem"}), 500)
 				raise
-			return(jsonify({"Status": "OK"}), 204)
+			return(jsonify({"Status": "OK"}), 200)
 			
 		except json.JSONDecodeError as e:
 			logger.info('Got a POST request to /api/shopify/product-metafield but it wasn\'t valid JSON: {}'.format(e))
