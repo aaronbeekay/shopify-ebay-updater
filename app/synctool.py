@@ -372,7 +372,9 @@ def ebay_product_endpoint():
 		
 	elif request.method == 'POST':
 		if 'sku' not in request.args:
-			return(jsonify({'error': 'No SKU provided'}), 400)
+			r = jsonify({'error': 'No SKU provided'})
+			r.status_code = 400
+			return( r )
 		try:
 			new = request.json
 			
@@ -409,7 +411,10 @@ def get_ebay_product(sku):
 		
 		return jsonify(inventory_item)
 	except glitchlab_shopify.AuthenticationError as e:
-		return(jsonify({'error': 'ebay_auth_invalid', 'message': e.message}), 403)
+		r = jsonify({'error': 'ebay_auth_invalid', 'message': e.message})
+		r.status_code = 403
+		return( r )
+		
 	except glitchlab_shopify.ItemNotFoundError as e:
 		"""
 		Check if this is an InventoryItemGroup - eBay will return item not found if you search for 
@@ -432,7 +437,9 @@ def get_ebay_product(sku):
 			return jsonify(inventory_item_group)
 				
 		except glitchlab_shopify.ItemNotFoundError as e:
-			return( jsonify({'error': 'ebay_item_not_found', 'message': e.message}), 404)
+			r =  jsonify({'error': 'ebay_item_not_found', 'message': e.message})
+			r.status_code = 404
+			return( r )
 
 # Serve static files using send_from_directory()	
 @app.route('/<path:file>')
