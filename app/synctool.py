@@ -196,7 +196,7 @@ def test_shopify_auth():
 		return jsonify({'shopify_auth_success': True})
 	else:
 		import pdb; pdb.set_trace()
-		return jsonify({'shopify_auth_success': False})
+		return jsonify({'shopify_auth_success': False}), 403
 	
 @app.route('/api/ebay/test-auth')
 @crossdomain('http://ui.ebay-sync.slirp.aaronbeekay.info')
@@ -206,15 +206,15 @@ def test_ebay_auth():
 	#logger.debug('/api/ebay/test-auth: Session variables are => {}'.format(json.dumps(dict(session))))
 	
 	if 'access_token' not in session:
-		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing', 'ebay_consent_url': app.config['EBAY_OAUTH_CONSENT_URL']})
+		return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_missing', 'ebay_consent_url': app.config['EBAY_OAUTH_CONSENT_URL']}), 403
 		
 	if session.get('access_token_expiry') < datetime.datetime.utcnow():
 	
 		if 'refresh_token' in session:
 			refresh_access_token(session.get('refresh_token'))		
-			return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_refreshed', 'message': 'eBay token has been refreshed, try reloading'})
+			return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_refreshed', 'message': 'eBay token has been refreshed, try reloading'}), 403
 		else:	
-			return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_expired'})
+			return jsonify({'ebay_auth_success': False, 'error': 'ebay_auth_expired'}), 403
 	
 	response = requests.get(
 		'https://api.ebay.com/sell/inventory/v1/inventory_item?limit=1',
@@ -229,14 +229,14 @@ def test_ebay_auth():
 		return jsonify({'ebay_auth_success': True})
 	else:
 		logger.warning('Failed eBay auth verification in a way that is not handled... eBay said: {}'.format(response.text))
-		return jsonify({'ebay_auth_success': False, 'error': 'lazy_programmer_error'})
+		return jsonify({'ebay_auth_success': False, 'error': 'lazy_programmer_error'}), 403
 	
 @app.route('/api/shopify/product', methods=['GET', 'POST'])
 @crossdomain('http://ui.ebay-sync.slirp.aaronbeekay.info')
 #@crossdomain(origin='https://clever-hare-1.glitch.me')
 def shopify_product_endpoint():
 	if 'id' not in request.args:
-		return("You need to supply the id parameter", 400)
+		return jsonify({"error": "You need to supply the id parameter"}), 400
 	
 	if request.method == 'GET':
 		with app.app_context():
@@ -245,9 +245,9 @@ def shopify_product_endpoint():
 				json.dumps(p)
 				return jsonify(p)
 			except TypeError:
-				return( jsonify({"error": "TypeError in shopify_product_endpoint()"}), 500 )
+				return jsonify({"error": "TypeError in shopify_product_endpoint()"}), 500 
 			except glitchlab_shopify.ItemNotFoundError:
-				return( jsonify({"error": 'No Shopify product found for that ID'}), 404)
+				return jsonify({"error": 'No Shopify product found for that ID'}), 404
 				logger.info('Shopify product not found: {}'.format(request.args['id']))
 	
 	if request.method == 'POST':
@@ -255,9 +255,9 @@ def shopify_product_endpoint():
 			glitchlab_shopify.set_shopify_attributes( request.args['id'], request.json )
 		except json.JSONDecodeError as e:
 			logger.warning("Bad (non-JSON) request sent to shopify product update endpoint: " + e)
-			return( jsonify({"error": "Invalid JSON body"}), 400)
+			return jsonify({"error": "Invalid JSON body"}), 400
 			
-		return( jsonify({"Status": "OK"}), 200 )
+		return jsonify({"Status": "OK"}), 200 
 		
 @app.route('/api/shopify/product-metafield', methods=['GET', 'POST'])
 def shopify_product_metafield():
@@ -376,9 +376,7 @@ def ebay_product_endpoint():
 		
 	elif request.method == 'POST':
 		if 'sku' not in request.args:
-			r = jsonify({'error': 'No SKU provided'})
-			r.status_code = 400
-			return( r )
+			return jsonify({'error': 'No SKU provided'}), 400
 		try:
 			new = request.json
 			
@@ -390,10 +388,18 @@ def ebay_product_endpoint():
 			# Now update the product too
 			glitchlab_shopify.set_ebay_attributes( request.args.get('sku'), request.json )
 			
-			return('{}')
+			return jsonify({"Status": "OK"}), 200
 		except json.JSONDecodeError as e:
-			logger.info('Bad request body sent to /api/ebay/product endpoint. Error: {}'.format(e))
+			logger.info('Bad request body sent to /api/ebay/product endpoint. Error: {}'.format(e.message))
 			logger.debug('Request body in question was {}'.format(request.text))
+			
+			return jsonify({"error": "Non-JSON request body"}), 400
+		except glitchlab_shopify.AuthenticationError as e:
+			return jsonify({"error": e.message}), 403
+		except glitchlab_shopify.ItemNotFoundError as e:
+			return jsonify({"error": "Item not found: {}".format(e.message)}), 404
+		except RuntimeError:
+			return jsonify({"error": "Something went wrong on backend..."}), 500
 			
 def get_ebay_product(sku):
 	"""Retrieve an item"""
@@ -403,7 +409,7 @@ def get_ebay_product(sku):
 	
 	if 'access_token' not in session or session.get('access_token_expiry') < datetime.datetime.utcnow():
 		# The client side will need to handle logging back in
-		return jsonify({'error': 'ebay_auth_invalid'}, 403)
+		return jsonify({'error': 'ebay_auth_invalid'}), 403
 	
 	try:
 		# Get the product details from the InventoryItem API
@@ -418,9 +424,7 @@ def get_ebay_product(sku):
 		
 		return jsonify(inventory_item)
 	except glitchlab_shopify.AuthenticationError as e:
-		r = jsonify({'error': 'ebay_auth_invalid', 'message': e.message})
-		r.status_code = 403
-		return( r )
+		return jsonify({'error': 'ebay_auth_invalid', 'message': e.message}), 403
 		
 	except glitchlab_shopify.ItemNotFoundError as e:
 		"""
@@ -447,9 +451,7 @@ def get_ebay_product(sku):
 			return jsonify(inventory_item_group)
 				
 		except glitchlab_shopify.ItemNotFoundError as e:
-			r =  jsonify({'error': 'ebay_item_not_found', 'message': e.message})
-			r.status_code = 404
-			return( r )
+			return jsonify({'error': 'ebay_item_not_found', 'message': e.message}), 404
 
 # Serve static files using send_from_directory()	
 @app.route('/<path:file>')
