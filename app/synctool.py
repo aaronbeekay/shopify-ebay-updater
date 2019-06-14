@@ -199,7 +199,7 @@ def test_shopify_auth():
 		return jsonify({'shopify_auth_success': False})
 	
 @app.route('/api/ebay/test-auth')
-@crossdomain('*')
+@crossdomain('http://ui.ebay-sync.slirp.aaronbeekay.info')
 def test_ebay_auth():
 	"""Do a test call to the eBay API to make sure we have good credentials"""
 	
@@ -232,7 +232,7 @@ def test_ebay_auth():
 		return jsonify({'ebay_auth_success': False, 'error': 'lazy_programmer_error'})
 	
 @app.route('/api/shopify/product', methods=['GET', 'POST'])
-@crossdomain('*')
+@crossdomain('http://ui.ebay-sync.slirp.aaronbeekay.info')
 #@crossdomain(origin='https://clever-hare-1.glitch.me')
 def shopify_product_endpoint():
 	if 'id' not in request.args:
@@ -364,7 +364,7 @@ def test_ebay_api_call():
 		return redirect(app.config['EBAY_OAUTH_CONSENT_URL'])
 		
 @app.route('/api/ebay/product', methods=['GET','POST'])
-@crossdomain('*')
+@crossdomain('http://ui.ebay-sync.slirp.aaronbeekay.info')
 #@crossdomain(origin='https://clever-hare-1.glitch.me')
 def ebay_product_endpoint():
 	"""
