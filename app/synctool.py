@@ -55,7 +55,7 @@ app.config['SHOPIFY_API_PW'] 			= os.getenv('SHOPIFY_API_PW',
 app.config['SHOPIFY_STORE_DOMAIN'] 		= os.getenv('SHOPIFY_STORE_DOMAIN',
 											 'glitchlab.myshopify.com' )
 											 
-app.config['SESSION_COOKIE_DOMAIN'] 	= '.aaronbeekay.info'
+app.config['SESSION_COOKIE_DOMAIN'] 	= 'ebay-sync.slirp.aaronbeekay.info'
 app.config['SESSION_COOKIE_HTTPONLY'] 	= False
 app.config['SESSION_COOKIE_SAMESITE'] 	= 'Lax'
 											 
