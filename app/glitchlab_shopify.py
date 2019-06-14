@@ -112,28 +112,35 @@ def set_shopify_attributes(product_id, attributes):
 	`set_metafield()` for each metafield.
 	"""
 	
-	if 'product' in attributes:
-		try:
-			pRequest = {"product": attributes['product']}
-			pRequest['product']['id'] = product_id
-			# Hit the Product endpoint first
-			#   TODO: Why the fuck am I doing this manually when I have the Shopify API right here?
-			url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + product_id + '.json'
-			logger.debug("Trying to PUT to the Shopify product {} by hitting {}".format(product_id, url))
-			logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
-			response = requests.put(
-				url,
-				auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
-				json=pRequest
-			)
-			p = response.json()
-			logger.debug("Shopify said: " + response.text)
-		except json.JSONDecodeError:
-			logger.error('Shopify said something that is not JSON: ' + response.text)
-			return 'Shopify said...' + response.text
-		except KeyError as e:
-			raise ValueError("You have to supply a dict with a 'product' key... " + e)
+
+	try:
+		pRequest = {"product": attributes}
+		pRequest['product']['id'] = product_id
 		
+		# Reformat the variants array
+		if 'variants' in attributes:
+			pRequest['product']['variants'] = []
+			for vid in attributes['variants'].keys():
+				v = attributes['variants'][vid]
+				v['id'] = vid
+				pRequest['product'][variants].append(v)
+		
+		# Hit the Product endpoint first
+		#   TODO: Why the fuck am I doing this manually when I have the Shopify API right here?
+		url = 'https://' + app.config['SHOPIFY_STORE_DOMAIN'] + '/admin/api/2019-04/products/' + product_id + '.json'
+		logger.debug("Trying to PUT to the Shopify product {} by hitting {}".format(product_id, url))
+		logger.debug("Using auth: {}:{}".format(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']))
+		response = requests.put(
+			url,
+			auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
+			json=pRequest
+		)
+		p = response.json()
+		logger.debug("Shopify said: " + response.text)
+	except json.JSONDecodeError:
+		logger.error('Shopify said something that is not JSON: ' + response.text)
+		return 'Shopify said...' + response.text
+			
 	if 'metafields' in attributes:
 		for k,v in attributes['metafields'].items():
 			set_metafield(product_id, k, v)
