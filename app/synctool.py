@@ -127,7 +127,7 @@ def crossdomain(origin=None, methods=None, headers=None, max_age=21600,
             h['Access-Control-Max-Age'] = str(max_age)
             h['Access-Control-Allow-Credentials'] = 'true'
             h['Access-Control-Allow-Headers'] = \
-                "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+                "Origin, X-Requested-With, Content-Type, Accept, Authorization, *"
             if headers is not None:
                 h['Access-Control-Allow-Headers'] = headers
             return resp
@@ -400,7 +400,7 @@ def get_ebay_product(sku):
 	
 	if 'access_token' not in session or session.get('access_token_expiry') < datetime.datetime.utcnow():
 		# The client side will need to handle logging back in
-		return jsonify({'error': 'ebay_auth_invalid'})
+		return jsonify({'error': 'ebay_auth_invalid'}, 403)
 	
 	try:
 		# Get the product details from the InventoryItem API
