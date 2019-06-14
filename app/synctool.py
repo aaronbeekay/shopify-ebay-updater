@@ -243,7 +243,7 @@ def shopify_product_endpoint():
 				json.dumps(p)
 				return jsonify(p)
 			except TypeError:
-				return jsonify({})
+				return( jsonify({"error": "TypeError in shopify_product_endpoint()"}), 500 )
 			except glitchlab_shopify.ItemNotFoundError:
 				return('No Shopify product found for that ID', 404)
 				logger.info('Shopify product not found: {}'.format(request.args['id']))
@@ -253,9 +253,9 @@ def shopify_product_endpoint():
 			glitchlab_shopify.set_shopify_attributes( request.args['id'], request.json )
 		except json.JSONDecodeError as e:
 			logger.warning("Bad (non-JSON) request sent to shopify product update endpoint: " + e)
-			return("Invalid JSON body", 400)
+			return(jsonify({"error": "Invalid JSON body"}, 400)
 			
-		return('', 204)
+		return(jsonify({"Status": "OK"}), 204)
 		
 @app.route('/api/shopify/product-metafield', methods=['GET', 'POST'])
 def shopify_product_metafield():
@@ -278,9 +278,9 @@ def shopify_product_metafield():
 						req['key'], 
 						req['value'] 					)
 			except:
-				return(500)
+				return( jsonify({"error": "some kind of problem"}), 500)
 				raise
-			return('', 204)
+			return(jsonify({"Status": "OK"}), 204)
 			
 		except json.JSONDecodeError as e:
 			logger.info('Got a POST request to /api/shopify/product-metafield but it wasn\'t valid JSON: {}'.format(e))
