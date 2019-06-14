@@ -114,6 +114,7 @@ def set_shopify_attributes(product_id, attributes):
 	
 
 	try:
+		logger.debug("Trying to set product ID {}, got new attributes {}".format( product_id, JSON.dumps(attributes) ))
 		pRequest = {"product": attributes}
 		pRequest['product']['id'] = product_id
 		
