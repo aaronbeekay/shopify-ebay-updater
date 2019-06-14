@@ -413,6 +413,9 @@ def get_ebay_product(sku):
 		offers = glitchlab_shopify.get_ebay_offers( request.args.get('sku')  )
 		inventory_item['offers'] = offers
 		
+		# If we got this far, this is a single-variant InventoryItem, not an InventoryItemGroup
+		inventory_item['_gl_ebay_type'] = 'inventoryitem'
+		
 		return jsonify(inventory_item)
 	except glitchlab_shopify.AuthenticationError as e:
 		r = jsonify({'error': 'ebay_auth_invalid', 'message': e.message})
@@ -437,6 +440,9 @@ def get_ebay_product(sku):
 						inventory_item_group['variants'][v['sku']] = v
 					else:
 						logger.warning("eBay sent us a variant that doesn't seem to have a SKU attribute... expected SKU {}, not adding it to the inventoryItemGroup.".format(vsku))
+			
+			# Signal that this is an inventoryItemGroup
+			inventory_item['_gl_ebay_type'] = 'inventoryitemgroup'
 			
 			return jsonify(inventory_item_group)
 				
