@@ -231,7 +231,7 @@ def test_ebay_auth():
 		return jsonify({'ebay_auth_success': False, 'error': 'lazy_programmer_error'})
 	
 @app.route('/api/shopify/product', methods=['GET', 'POST'])
-@crossdomain(origin='*')
+@crossdomain(origin='http://ui.ebay-sync.slirp.aaronbeekay.info')
 def shopify_product_endpoint():
 	if 'id' not in request.args:
 		return("You need to supply the id parameter", 400)
