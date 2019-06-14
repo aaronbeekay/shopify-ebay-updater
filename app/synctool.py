@@ -409,7 +409,7 @@ def get_ebay_product(sku):
 		
 		return jsonify(inventory_item)
 	except glitchlab_shopify.AuthenticationError as e:
-		return jsonify({'error': 'ebay_auth_invalid', 'message': e.message}, 403)
+		return(jsonify({'error': 'ebay_auth_invalid', 'message': e.message}), 403)
 	except glitchlab_shopify.ItemNotFoundError as e:
 		"""
 		Check if this is an InventoryItemGroup - eBay will return item not found if you search for 
@@ -432,7 +432,7 @@ def get_ebay_product(sku):
 			return jsonify(inventory_item_group)
 				
 		except glitchlab_shopify.ItemNotFoundError as e:
-			return jsonify({'error': 'ebay_item_not_found', 'message': e.message}, 404)
+			return( jsonify({'error': 'ebay_item_not_found', 'message': e.message}), 404)
 
 # Serve static files using send_from_directory()	
 @app.route('/<path:file>')
