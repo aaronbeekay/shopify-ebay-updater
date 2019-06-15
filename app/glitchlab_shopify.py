@@ -337,7 +337,7 @@ def set_ebay_attributes(product_sku, attributes):
 	# 2. Merge new attributes with existing inventory item
 	try:
 		iNew = merge(iOld, attributes)
-	except * as e:
+	except Exception as e:
 		from pprint import pprint
 		logger.error('Failed to merge new attributes into eBay product dict. merge() says: {}'.format(e))
 		logger.error('Old item: {}'.format(pprint(iOld)))
