@@ -386,7 +386,8 @@ def ebay_product_endpoint():
 					glitchlab_shopify.update_ebay_offer( offer['offerId'], offer )
 		
 			# Now update the product too
-			glitchlab_shopify.set_ebay_attributes( request.args.get('sku'), request.json )
+			logger.debug( "Updating eBay SKU {} - got new attributes {}".format(request.args.get('sku'), new))
+			glitchlab_shopify.set_ebay_attributes( request.args.get('sku'), new )
 			
 			return jsonify({"Status": "OK"}), 200
 		except json.JSONDecodeError as e:
