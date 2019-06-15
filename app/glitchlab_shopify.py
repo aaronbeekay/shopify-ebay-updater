@@ -338,10 +338,10 @@ def set_ebay_attributes(product_sku, attributes):
 	try:
 		iNew = merge(iOld, attributes)
 	except Exception as e:
-		from pprint import pprint
+		from pprint import pformat
 		logger.error('Failed to merge new attributes into eBay product dict. merge() says: {}'.format(e))
-		logger.error('Old item: {}'.format(pprint(iOld)))
-		logger.error('Attributes attempting to merge in: {}'.format(pprint(attributes)) )
+		logger.error('Old item: {}'.format(pformat(iOld, width=120)))
+		logger.error('Attributes attempting to merge in: {}'.format(pformat(attributes, width=120)) )
 	
 	# 3. Call createOrReplaceInventoryItem
 	url = app.config['EBAY_INVENTORYITEM_URL'].format( product_sku )
