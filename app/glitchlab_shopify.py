@@ -332,14 +332,15 @@ def set_ebay_attributes(product_sku, attributes):
 		iOld = get_ebay_product( auth_token, product_sku )
 	except ItemNotFoundError:
 		logger.info('set_ebay_attributes called for SKU {sku}, but eBay says item not found'.format(product_sku))
-		return None
+		raise
 	
 	# 2. Merge new attributes with existing inventory item
 	try:
 		iNew = merge(iOld, attributes)
-	except RuntimeError as e:
+	except * as e:
 		from pprint import pprint
 		logger.error('Failed to merge new attributes into eBay product dict. merge() says: {}'.format(e))
+		logger.error('Old item: {}'.format(pprint(iOld)))
 		logger.error('Attributes attempting to merge in: {}'.format(pprint(attributes)) )
 	
 	# 3. Call createOrReplaceInventoryItem
@@ -373,7 +374,7 @@ def set_ebay_attributes(product_sku, attributes):
 				raise AuthenticationError(e['message'])
 			else:
 				logger.warning("Unexpected eBay error: {}".format( response.text ))
-				return(j, 406)
+				raise RuntimeError("eBay error: {}".format(response.text) )
 				
 	return j
 	
