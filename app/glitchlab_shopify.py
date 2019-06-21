@@ -129,8 +129,12 @@ def set_shopify_attributes(product_id, attributes):
 				if 'metafields' in attributes['variants'][vid]:
 					v['metafields'] = []
 					for key, val in attributes['variants'][vid]['metafields']:
+						logger.debug("Adding metafield {} => {}".format(key, val))
 						v['metafields'].append( {"key": key, "value": val} )
+						logger.debug("Now variant metafields are: {}".format(json.dumps(v['metafields'])))
+						
 				newVariants.append(v)
+				
 			pRequest['product']['variants'] = newVariants
 		
 		# Hit the Product endpoint first
