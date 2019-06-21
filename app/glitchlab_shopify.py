@@ -4,6 +4,7 @@ import logging
 import pystache
 import requests
 import json
+import copy
 from flask import session, request
 from flask import current_app as app
 
@@ -122,7 +123,7 @@ def set_shopify_attributes(product_id, attributes):
 		if 'variants' in attributes:
 			newVariants = []
 			for vid in attributes['variants'].keys():
-				v = attributes['variants'][vid]
+				v = copy.deepcopy( attributes['variants'][vid] )
 				v['id'] = vid
 				
 				# Also need to reformat metafields for each variant
