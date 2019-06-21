@@ -124,6 +124,12 @@ def set_shopify_attributes(product_id, attributes):
 			for vid in attributes['variants'].keys():
 				v = attributes['variants'][vid]
 				v['id'] = vid
+				
+				# Also need to reformat metafields for each variant
+				if 'metafields' in attributes['variants'][vid]:
+					v['metafields'] = []
+					for key, val in attributes['variants'][vid]['metafields']:
+						v['metafields'].append( {"key": key, "value": val} )
 				newVariants.append(v)
 			pRequest['product']['variants'] = newVariants
 		
