@@ -131,7 +131,7 @@ def set_shopify_attributes(product_id, attributes):
 					v['metafields'] = []
 					for key, val in attributes['variants'][vid]['metafields'].items():
 						logger.debug("Adding metafield {} => {}".format(key, val))
-						v['metafields'].append( {"key": key, "value": val} )
+						v['metafields'].append( {"key": key, "value": val, "namespace": "global", "value_type": "string"} )
 						logger.debug("Now variant metafields are: {}".format(json.dumps(v['metafields'])))
 						
 				newVariants.append(v)
