@@ -128,7 +128,7 @@ def set_shopify_attributes(product_id, attributes):
 				# Also need to reformat metafields for each variant
 				if 'metafields' in attributes['variants'][vid]:
 					v['metafields'] = []
-					for key, val in attributes['variants'][vid]['metafields']:
+					for key, val in attributes['variants'][vid]['metafields'].items():
 						logger.debug("Adding metafield {} => {}".format(key, val))
 						v['metafields'].append( {"key": key, "value": val} )
 						logger.debug("Now variant metafields are: {}".format(json.dumps(v['metafields'])))
