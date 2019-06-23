@@ -6,6 +6,7 @@ import requests
 import datetime
 from flask_cors import CORS
 import re
+import copy
 
 """Flask app setup"""
 app = Flask(__name__)
@@ -378,17 +379,20 @@ def ebay_product_endpoint():
 		if 'sku' not in request.args:
 			return jsonify({'error': 'No SKU provided'}), 400
 		try:
-			new = request.json
+			newoffers = request.json
+			newproduct = copy.deepcopy(newoffers)
+			if 'offers' in newproduct:
+				del newproduct['offers']
+				
+			# Update product first
+			logger.debug( "Updating eBay SKU {} - got new attributes {}".format(request.args.get('sku'), newproduct))
+			glitchlab_shopify.set_ebay_attributes( request.args.get('sku'), newproduct )
 			
-			if 'offers' in new and len(new['offers']) > 0:
+			if 'offers' in newoffers and len(newoffers['offers']) > 0:
 				# We need to update each of the associated offers too
-				for offer in new['offers']:
+				for offer in newoffers['offers']:
 					glitchlab_shopify.update_ebay_offer( offer['offerId'], offer )
-		
-			# Now update the product too
-			del new['offers']
-			logger.debug( "Updating eBay SKU {} - got new attributes {}".format(request.args.get('sku'), new))
-			glitchlab_shopify.set_ebay_attributes( request.args.get('sku'), new )
+				
 			
 			return jsonify({"Status": "OK"}), 200
 		except json.JSONDecodeError as e:
