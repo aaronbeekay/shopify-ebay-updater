@@ -452,7 +452,7 @@ def get_ebay_product(sku):
 						logger.warning("eBay sent us a variant that doesn't seem to have a SKU attribute... expected SKU {}, not adding it to the inventoryItemGroup.".format(vsku))
 			
 			# Signal that this is an inventoryItemGroup
-			inventory_item['_gl_ebay_type'] = 'inventoryitemgroup'
+			inventory_item_group['_gl_ebay_type'] = 'inventoryitemgroup'
 			
 			return jsonify(inventory_item_group)
 				
