@@ -378,34 +378,66 @@ def ebay_product_endpoint():
 	elif request.method == 'POST':
 		if 'sku' not in request.args:
 			return jsonify({'error': 'No SKU provided'}), 400
+		
 		try:
-			newoffers = request.json
-			newproduct = copy.deepcopy(newoffers)
-			if 'offers' in newproduct:
-				del newproduct['offers']
-				
-			# Update product first
-			logger.debug( "Updating eBay SKU {} - got new attributes {}".format(request.args.get('sku'), newproduct))
-			glitchlab_shopify.set_ebay_attributes( request.args.get('sku'), newproduct )
-			
-			if 'offers' in newoffers and len(newoffers['offers']) > 0:
-				# We need to update each of the associated offers too
-				for offer in newoffers['offers']:
-					glitchlab_shopify.update_ebay_offer( offer['offerId'], offer )
-				
-			
-			return jsonify({"Status": "OK"}), 200
+			epNew = request.json
 		except json.JSONDecodeError as e:
 			logger.info('Bad request body sent to /api/ebay/product endpoint. Error: {}'.format(e.message))
 			logger.debug('Request body in question was {}'.format(request.text))
-			
 			return jsonify({"error": "Non-JSON request body"}), 400
-		except glitchlab_shopify.AuthenticationError as e:
-			return jsonify({"error": e.message}), 403
-		except glitchlab_shopify.ItemNotFoundError as e:
-			return jsonify({"error": "Item not found: {}".format(e.message)}), 404
-		except RuntimeError:
-			return jsonify({"error": "Something went wrong on backend..."}), 500
+			
+		if epNew['_gl_ebay_type'] == 'inventoryitem':
+			try:
+				newoffers = copy.deepcopy(epNew)
+				
+				if 'offers' in epNew:
+					del epNew['offers']
+				
+				# Update product first
+				logger.debug( "Updating eBay SKU {} - got new attributes {}".format(request.args.get('sku'), epNew))
+				glitchlab_shopify.set_ebay_attributes( request.args.get('sku'), epNew )
+			
+				if 'offers' in newoffers and len(newoffers['offers']) > 0:
+					# We need to update each of the associated offers too
+					for offer in newoffers['offers']:
+						glitchlab_shopify.update_ebay_offer( offer['offerId'], offer )
+			
+				return jsonify({"Status": "OK"}), 200
+		
+			except glitchlab_shopify.AuthenticationError as e:
+				return jsonify({"error": e.message}), 403
+			except glitchlab_shopify.ItemNotFoundError as e:
+				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
+			except RuntimeError:
+				return jsonify({"error": "Something went wrong on backend..."}), 500
+				
+		elif epNew['_gl_ebay_type'] == 'inventoryitemgroup':
+			# Update inventoryItemGroup first
+			try:
+				glitchlab_shopify.set_ebay_inventoryitemgroup( request.args.get('sku'), epNew )
+			except glitchlab_shopify.AuthenticationError as e:
+				return jsonify({"error": e.message}), 403
+			except glitchlab_shopify.ItemNotFoundError as e:
+				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
+			except RuntimeError:
+				return jsonify({"error": "Something went wrong on backend..."}), 500
+				
+			# Then go through and update each of the member products
+			for sku, inventoryItem in epNew['variants'].items():
+				try:
+					glitchlab_shopify.set_ebay_attributes( sku, inventoryItem )
+				except glitchlab_shopify.AuthenticationError as e:
+					return jsonify({"error": e.message}), 403
+				except glitchlab_shopify.ItemNotFoundError as e:
+					return jsonify({"error": "Item not found: {}".format(e.message)}), 404
+				except RuntimeError:
+					return jsonify({"error": "Something went wrong on backend..."}), 500
+			
+			return jsonify({"Status": "OK"}), 200
+		
+		else:
+			return jsonify({"error": "Missing `_gl_ebay_type` parameter, don't know what to do"}), 400
+				
 			
 def get_ebay_product(sku):
 	"""Retrieve an item"""

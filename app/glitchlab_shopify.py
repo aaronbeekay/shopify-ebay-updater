@@ -353,6 +353,7 @@ def set_ebay_attributes(product_sku, attributes):
 		logger.error('Failed to merge new attributes into eBay product dict. merge() says: {}'.format(e))
 		logger.error('Old item: {}'.format(pformat(iOld, width=120)))
 		logger.error('Attributes attempting to merge in: {}'.format(pformat(attributes, width=120)) )
+		raise
 	
 	# 3. Call createOrReplaceInventoryItem
 	url = app.config['EBAY_INVENTORYITEM_URL'].format( product_sku )
@@ -416,9 +417,66 @@ def set_ebay_inventoryitemgroup(inventoryitemgroup_key, attributes):
 	Just like `set_ebay_attributes()`, write the attributes given in the `attributes` arg to the given eBay
 	inventoryItemGroup. 
 	
-	Like `set_ebay_attributes()`, 
+	Like `set_ebay_attributes()`, download the whole thing first, then update the relevant bits, then re-upload.
 	"""
-	raise NotImplementedError("sorry")
+	try:
+		auth_token = session['access_token']
+	except KeyError as e:
+		raise AuthenticationError("No access token provided")
+	
+	# 1. Fetch the existing inventory item (eBay will overwrite all fields when we update, so merge locally)
+	try:
+		iOld = get_ebay_inventoryitemgroup( auth_token, inventoryitemgroup_key )
+	except ItemNotFoundError:
+		logger.info('set_ebay_inventoryitemgroup() called for SKU {sku}, but eBay says item not found'.format(inventoryitemgroup_key))
+		raise
+		
+	# 2. Merge new attributes with existing inventory item
+	try:
+		if 'variants' in attributes:
+			del attributes['variants']
+		iNew = merge(iOld, attributes)
+	except Exception as e:
+		from pprint import pformat
+		logger.error('Failed to merge new attributes into eBay product dict. merge() says: {}'.format(e))
+		logger.error('Old item: {}'.format(pformat(iOld, width=120)))
+		logger.error('Attributes attempting to merge in: {}'.format(pformat(attributes, width=120)) )
+		raise
+		
+	# 3. Call createOrReplaceInventoryItem
+	url = app.config['EBAY_INVENTORYITEMGROUP_URL'].format( inventoryitemgroup_key )
+	headers = {
+		'Authorization': 'Bearer {}'.format( auth_token ),
+		'Content-Language': 'en-US'
+		}
+	logger.debug('Trying to update eBay SKU {}...'.format( inventoryitemgroup_key ))
+	response = requests.put( url, headers=headers, json=iNew )
+	logger.debug('Raw reply from eBay: {}'.format(response.text))
+	
+	if response.status_code == 204:
+		# 204 No Content, this is a good thing
+		logger.debug('eBay returned 204 No Content, assume all went well')
+		return {}
+		
+	try:
+		j = response.json()
+	except json.JSONDecodeError:
+		j = None
+		logger.warning('Got a weird reply from eBay: {}'.format(response.text))
+		
+	if 'errors' in j:
+		for e in j['errors']:
+			if e['errorId'] == app.config['constants']['EBAY_ERROR_SKU_NOT_FOUND']:
+				raise ItemNotFoundError(e['message'])
+			elif (	e['errorId'] == app.config['constants']['EBAY_ERROR_INVALID_ACCESS_TOKEN'] 	\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_MISSING_ACCESS_TOKEN'] 	\
+				or 	e['errorId'] == app.config['constants']['EBAY_ERROR_ACCESS_DENIED']		    ):
+				raise AuthenticationError(e['message'])
+			else:
+				logger.warning("Unexpected eBay error: {}".format( response.text ))
+				raise RuntimeError("eBay error: {}".format(response.text) )
+				
+	return j
 
 def get_ebay_inventoryitemgroup(auth_token, inventoryitemgroup_key):
 	"""
