@@ -249,8 +249,6 @@ def shopify_search():
 		return jsonify({}), 404	
 	
 @app.route('/api/shopify/product', methods=['GET', 'POST'])
-@crossdomain('http://ui.ebay-sync.slirp.aaronbeekay.info')
-#@crossdomain(origin='https://clever-hare-1.glitch.me')
 def shopify_product_endpoint():
 	if 'id' not in request.args:
 		return jsonify({"error": "You need to supply the id parameter"}), 400
