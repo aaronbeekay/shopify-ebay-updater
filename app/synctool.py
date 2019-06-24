@@ -243,7 +243,7 @@ def shopify_search():
 		return jsonify({"error": "You need to supply the id parameter"}), 400
 	
 	try:	
-		r = glitchlab_shopify.get_shopify_product_matches( request.args.get('q') )
+		r = glitchlab_shopify.get_shopify_product_matches( request.args.get('q') ).get('products')
 		return jsonify(r)
 	except glitchlab_shopify.ItemNotFoundError:
 		return jsonify({}), 404	
