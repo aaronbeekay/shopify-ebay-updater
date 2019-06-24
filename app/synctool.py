@@ -486,6 +486,9 @@ def get_ebay_product(sku):
 			# Signal that this is an inventoryItemGroup
 			inventory_item_group['_gl_ebay_type'] = 'inventoryitemgroup'
 			
+			# Include the SKU for helpfulness
+			inventory_item_group['sku'] = sku
+			
 			return jsonify(inventory_item_group)
 				
 		except glitchlab_shopify.ItemNotFoundError as e:
