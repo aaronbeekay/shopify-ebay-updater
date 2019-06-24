@@ -55,6 +55,36 @@ def render_product_template(template, shopifyProduct):
 				}
 	
 	return pystache.render(t, fields)
+
+def get_shopify_product_matches( qstring ):
+	"""
+	Fetch a list of Shopify products (just id and title) based on a query string.
+	For now, only titles supported in query string.
+	"""	
+	
+	url = 'https://{domain}/admin/api/2019-04/products.json'.format( domain=app.config['SHOPIFY_STORE_DOMAIN'] )
+	args = {
+		'limit': '10',
+		'fields': 'id,title'
+	}
+	
+	# Filter by title for now
+	args['title'] = qstring
+	
+	response = requests.get(
+		url,
+		auth=(app.config['SHOPIFY_API_KEY'],app.config['SHOPIFY_API_PW']),
+		params=args
+	)
+	
+	try:
+		results = response.json()
+	except json.JSONDecodeError:
+		logger.error('Shopify said something that is not JSON...' + response.text)
+		return jsonify({'error': 'Bad response from Shopify', 'error_details': response.text}), 500
+			# FIXME: probably should let the calling function handle the http details
+		
+	return results
 	
 def get_shopify_product(product_id):
 	"""

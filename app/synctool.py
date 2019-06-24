@@ -231,6 +231,22 @@ def test_ebay_auth():
 	else:
 		logger.warning('Failed eBay auth verification in a way that is not handled... eBay said: {}'.format(response.text))
 		return jsonify({'ebay_auth_success': False, 'error': 'lazy_programmer_error'}), 403
+
+@app.route('/api/shopify/search', methods=['GET'])
+def shopify_search():
+	"""
+	Get a string from a search omnibox - could be mfg, mpn, title, ID...
+	Return a list (5-10?) of products that could be a match.
+	"""
+	
+	if 'q' not in request.args:
+		return jsonify({"error": "You need to supply the id parameter"}), 400
+	
+	try:	
+		r = glitchlab_shopify.get_shopify_product_matches( request.args.get('q') )
+		return jsonify(r)
+	except glitchlab_shopify.ItemNotFoundError:
+		return jsonify({}), 404	
 	
 @app.route('/api/shopify/product', methods=['GET', 'POST'])
 @crossdomain('http://ui.ebay-sync.slirp.aaronbeekay.info')
@@ -423,6 +439,7 @@ def ebay_product_endpoint():
 				return jsonify({"error": "Something went wrong on backend..."}), 500
 				
 			# Then go through and update each of the member products
+			logger.debug("Now updating each of the children of the inventoryItemGroup...")
 			for sku, inventoryItem in epNew['variants'].items():
 				try:
 					glitchlab_shopify.set_ebay_attributes( sku, inventoryItem )
