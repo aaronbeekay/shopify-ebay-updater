@@ -412,7 +412,7 @@ def get_ebay_product(auth_token, product_sku):
 				
 	return j
 	
-def set_ebay_inventoryitemgroup(inventoryitemgroup_key, attributes):
+def set_ebay_inventoryitemgroup(inventoryitemgroup_key, attributes_in):
 	"""
 	Just like `set_ebay_attributes()`, write the attributes given in the `attributes` arg to the given eBay
 	inventoryItemGroup. 
@@ -433,6 +433,7 @@ def set_ebay_inventoryitemgroup(inventoryitemgroup_key, attributes):
 		
 	# 2. Merge new attributes with existing inventory item
 	try:
+		attributes = copy.deepcopy(attributes_in)
 		if 'variants' in attributes:
 			del attributes['variants']
 		iNew = merge(iOld, attributes)
