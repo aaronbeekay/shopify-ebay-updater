@@ -271,6 +271,9 @@ def shopify_product_endpoint():
 		except json.JSONDecodeError as e:
 			logger.warning("Bad (non-JSON) request sent to shopify product update endpoint: " + e)
 			return jsonify({"error": "Invalid JSON body"}), 400
+		except glitchlab_shopify.ProductWriteError as e:
+			logger.error("Product write error: {}".format(e.message))
+			return jsonify({"error": e.message}), 400
 			
 		return jsonify({"Status": "OK"}), 200 
 		

@@ -180,6 +180,10 @@ def set_shopify_attributes(product_id, attributes):
 		)
 		p = response.json()
 		logger.debug("Shopify said: " + response.text)
+		
+		if "errors" in p:
+			raise ProductWriteError( json.dumps(p['errors']) )
+			
 	except json.JSONDecodeError:
 		logger.error('Shopify said something that is not JSON: ' + response.text)
 		return 'Shopify said...' + response.text
@@ -643,7 +647,7 @@ def set_metafields(product, metafields):
 					product['Handle'],
 					product.errors.full_messages()	)
 			logger.error(message)
-			raise RuntimeError(message)
+			raise ProductWriteError(message)
 		else:
 			logger.info('Successfully updated product id {} with metafield {} = {}'.format(product.id, k, v))
 			
@@ -753,6 +757,12 @@ def guess_metafield_type(value):
 class Error(Exception):
 	"""Base class for exceptions"""
 	pass
+	
+class ProductWriteError(Error):
+	"""Raised when we fail to write an updated product state for some reason or another"""
+	
+	def __init__(self, message):
+		self.message = message
 
 class AuthenticationError(Error):
 	"""Raised when an external service rejects our credentials for one reason or another"""
