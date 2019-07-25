@@ -149,6 +149,10 @@ def set_shopify_attributes(product_id, attributes):
 		pRequest = {"product": attributes}
 		pRequest['product']['id'] = product_id
 		
+		if 'metafields' in attributes:
+		for k,v in attributes['metafields'].items():
+			set_metafield(product_id, k, v)
+		
 		#import pdb; pdb.set_trace();
 		
 		# Reformat the variants array
@@ -191,10 +195,6 @@ def set_shopify_attributes(product_id, attributes):
 	except json.JSONDecodeError:
 		logger.error('Shopify said something that is not JSON: ' + response.text)
 		return 'Shopify said...' + response.text
-			
-	if 'metafields' in attributes:
-		for k,v in attributes['metafields'].items():
-			set_metafield(product_id, k, v)
 	
 	return True
 
