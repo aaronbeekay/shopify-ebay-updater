@@ -150,8 +150,8 @@ def set_shopify_attributes(product_id, attributes):
 		pRequest['product']['id'] = product_id
 		
 		if 'metafields' in attributes:
-		for k,v in attributes['metafields'].items():
-			set_metafield(product_id, k, v)
+			for k,v in attributes['metafields'].items():
+				set_metafield(product_id, k, v)
 		
 		#import pdb; pdb.set_trace();
 		
