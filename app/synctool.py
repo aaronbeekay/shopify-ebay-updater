@@ -426,7 +426,7 @@ def ebay_product_endpoint():
 			except glitchlab_shopify.ItemNotFoundError as e:
 				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
 			except RuntimeError as e:
-				return jsonify({"error": "Something went wrong on backend: {}".format(e.get('message'))}), 500
+				return jsonify({"error": e.message }), 500
 				
 		elif epNew['_gl_ebay_type'] == 'inventoryitemgroup':
 			# Update inventoryItemGroup first
@@ -435,9 +435,9 @@ def ebay_product_endpoint():
 			except glitchlab_shopify.AuthenticationError as e:
 				return jsonify({"error": e.message}), 403
 			except glitchlab_shopify.ItemNotFoundError as e:
-				return jsonify({"error": "Item not found: {}".format(e.get('message'))}), 404
+				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
 			except RuntimeError:
-				return jsonify({"error": "Something went wrong on backend..."}), 500
+				return jsonify({"error": e.message}), 500
 				
 			# Then go through and update each of the member products
 			logger.debug("Now updating each of the children of the inventoryItemGroup...")
@@ -445,11 +445,11 @@ def ebay_product_endpoint():
 				try:
 					glitchlab_shopify.set_ebay_attributes( sku, inventoryItem )
 				except glitchlab_shopify.AuthenticationError as e:
-					return jsonify({"error": e.get('message')}), 403
+					return jsonify({"error": e.message}), 403
 				except glitchlab_shopify.ItemNotFoundError as e:
-					return jsonify({"error": "Item not found: {}".format(e.get('message'))}), 404
+					return jsonify({"error": "Item not found: {}".format(e.message)}), 404
 				except RuntimeError as e:
-					return jsonify({"error": "Something went wrong on backend:".format(e.get('message'))}), 500
+					return jsonify({"error": e.message}), 500
 			
 			return jsonify({"Status": "OK"}), 200
 		
