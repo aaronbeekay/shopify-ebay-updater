@@ -399,7 +399,7 @@ def ebay_product_endpoint():
 		try:
 			epNew = request.json
 		except json.JSONDecodeError as e:
-			logger.info('Bad request body sent to /api/ebay/product endpoint. Error: {}'.format(e.message))
+			logger.info('Bad request body sent to /api/ebay/product endpoint. Error: {}'.format(str(e)))
 			logger.debug('Request body in question was {}'.format(request.text))
 			return jsonify({"error": "Non-JSON request body"}), 400
 			
@@ -426,7 +426,7 @@ def ebay_product_endpoint():
 			except glitchlab_shopify.ItemNotFoundError as e:
 				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
 			except RuntimeError as e:
-				return jsonify({"error": e.message }), 500
+				return jsonify({"error": str(e) }), 500
 				
 		elif epNew['_gl_ebay_type'] == 'inventoryitemgroup':
 			# Update inventoryItemGroup first
@@ -437,7 +437,7 @@ def ebay_product_endpoint():
 			except glitchlab_shopify.ItemNotFoundError as e:
 				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
 			except RuntimeError:
-				return jsonify({"error": e.message}), 500
+				return jsonify({"error": str(e)}), 500
 				
 			# Then go through and update each of the member products
 			logger.debug("Now updating each of the children of the inventoryItemGroup...")
@@ -449,7 +449,7 @@ def ebay_product_endpoint():
 				except glitchlab_shopify.ItemNotFoundError as e:
 					return jsonify({"error": "Item not found: {}".format(e.message)}), 404
 				except RuntimeError as e:
-					return jsonify({"error": e.message}), 500
+					return jsonify({"error": str(e)}), 500
 			
 			return jsonify({"Status": "OK"}), 200
 		
