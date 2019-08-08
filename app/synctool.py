@@ -429,17 +429,9 @@ def ebay_product_endpoint():
 				return jsonify({"error": str(e) }), 500
 				
 		elif epNew['_gl_ebay_type'] == 'inventoryitemgroup':
-			# Update inventoryItemGroup first
-			try:
-				glitchlab_shopify.set_ebay_inventoryitemgroup( request.args.get('sku'), epNew )
-			except glitchlab_shopify.AuthenticationError as e:
-				return jsonify({"error": e.message}), 403
-			except glitchlab_shopify.ItemNotFoundError as e:
-				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
-			except RuntimeError as e:
-				return jsonify({"error": str(e)}), 500
+			
 				
-			# Then go through and update each of the member products
+			# First go through and update each of the member products
 			logger.debug("Now updating each of the children of the inventoryItemGroup...")
 			for sku, inventoryItem in epNew['variants'].items():
 				try:
@@ -450,6 +442,16 @@ def ebay_product_endpoint():
 					return jsonify({"error": "Item not found: {}".format(e.message)}), 404
 				except RuntimeError as e:
 					return jsonify({"error": str(e)}), 500
+					
+			# Update inventoryItemGroup second
+			try:
+				glitchlab_shopify.set_ebay_inventoryitemgroup( request.args.get('sku'), epNew )
+			except glitchlab_shopify.AuthenticationError as e:
+				return jsonify({"error": e.message}), 403
+			except glitchlab_shopify.ItemNotFoundError as e:
+				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
+			except RuntimeError as e:
+				return jsonify({"error": str(e)}), 500
 			
 			return jsonify({"Status": "OK"}), 200
 		
