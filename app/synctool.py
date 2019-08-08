@@ -429,12 +429,16 @@ def ebay_product_endpoint():
 				return jsonify({"error": str(e) }), 500
 				
 		elif epNew['_gl_ebay_type'] == 'inventoryitemgroup':
-			
+		
+			# Hard-coded because I hate my future self: build a list of all the conditions that are present
+			# 	in the variants, so that we can update the inventoryItemGroup later
+			variantConditions = []
 				
 			# First go through and update each of the member products
 			logger.debug("Now updating each of the children of the inventoryItemGroup...")
 			for sku, inventoryItem in epNew['variants'].items():
 				try:
+					variantConditions.append( inventoryItem['condition'] )
 					glitchlab_shopify.set_ebay_attributes( sku, inventoryItem )
 				except glitchlab_shopify.AuthenticationError as e:
 					return jsonify({"error": e.message}), 403
@@ -445,6 +449,8 @@ def ebay_product_endpoint():
 					
 			# Update inventoryItemGroup second
 			try:
+				# Make a list of the conditions represented, update the inventoryItemGroup with these conditions
+				epNew['variesBy'] = {"specifications": [{"name": "Condition", "values": variantConditions}]}
 				glitchlab_shopify.set_ebay_inventoryitemgroup( request.args.get('sku'), epNew )
 			except glitchlab_shopify.AuthenticationError as e:
 				return jsonify({"error": e.message}), 403
