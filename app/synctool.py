@@ -436,7 +436,7 @@ def ebay_product_endpoint():
 				return jsonify({"error": e.message}), 403
 			except glitchlab_shopify.ItemNotFoundError as e:
 				return jsonify({"error": "Item not found: {}".format(e.message)}), 404
-			except RuntimeError:
+			except RuntimeError as e:
 				return jsonify({"error": str(e)}), 500
 				
 			# Then go through and update each of the member products
