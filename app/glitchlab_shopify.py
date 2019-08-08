@@ -474,6 +474,10 @@ def set_ebay_inventoryitemgroup(inventoryitemgroup_key, attributes_in):
 		attributes = copy.deepcopy(attributes_in)
 		if 'variants' in attributes:
 			del attributes['variants']
+			
+		if 'variesBy' in iOld:			# expect to be passed this in the new item. fuck this code
+			del iOld['variesBy']
+			
 		iNew = merge(iOld, attributes)
 	except Exception as e:
 		from pprint import pformat
